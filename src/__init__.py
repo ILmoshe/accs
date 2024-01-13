@@ -1,5 +1,6 @@
-import folium
 from datetime import datetime, timedelta
+
+import folium
 import numpy as np
 
 
@@ -57,9 +58,9 @@ m = folium.Map(location=[start_latitude, start_longitude], zoom_start=6)
 
 # Add the flight path to the map
 for coord in flight_coordinates:
-    folium.Marker(location=[coord[0], coord[1]], icon=folium.Icon(color="blue")).add_to(
-        m
-    )
+    folium.Marker(
+        location=[coord[0], coord[1]], icon=folium.Icon(color='blue')
+    ).add_to(m)
 
 # Save the map to an HTML file
-m.save("flight_path_map.html")
+m.save('flight_path_map.html')

@@ -1,5 +1,9 @@
 black
+isort
 matplotlib
 numpy
 folium
 arrow
+geopy
+shapely
+pydantic

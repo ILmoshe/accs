@@ -33,3 +33,42 @@ PROJECT STRUCTURE
 
 1. We will start by drawing actually a random vector which represent a path/aw
 2.
+
+
+
+# The first constrain I want to do is just the distance:
+iterate over every minute(in real world is every second) of the fligth and see for each demand if I Can actuall take
+it in that second
+maybe each sensor can scan in other speed. I need scan speed, but lets not talk about scan capabilites for now.
+let say that if I have access in a given second to a demand so I can take it, and if I see that I can't take all
+the demand in the same second, and i need 2 seconds to take the full demand its ok.
+
+
+the algo will go as follow:
+
+
+for now the sensor ground footprint is 10 meter
+take each point of the demand(polygon) and measure the distance between the current point of the fligth, if is
+more then
+
+
+take each circle of every minute of the fligth and calculate:
+
+1. how much he is covering FLOAT
+2. what he is covering POLYGON
+3. what is the leftovera POLYGON
+
+
+
+
+{circle_timestamp: {demand_id: {covering_percentage: Float, covering: Polygon, leftover: Polygon}, }
+for circle in circles(represnet some interval):
+    for demand in circle:
+        ASK ABOUT THE CIRCLE:
+        1. how much he is covering FLOAT
+        2. what he is covering POLYGON
+        3. what is the leftovera POLYGON
+
+
+
+Yonhatan says something more simpler, take a polygon and try him againts the radius
