@@ -1,29 +1,18 @@
 import math
 import time
-from typing import Dict, List, Tuple, Union
 
 import shapely
 from geopy.distance import geodesic
-from pydantic import BaseModel
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Polygon
+
+from . import CoverageResult, Demand, DemandCoverage
 
 
-class Demand(BaseModel):
-    id: str
-    polygon: List[Tuple[float, float]]
-
-
-CoverageResult = Dict[
-    int, Dict[str, Dict[str, Union[float, Polygon, Polygon]]]
-]
-
-
-def convert_polygon_to_list(polygon: shapely.Polygon) -> list[list[float]]:
-    return [list(coord) for coord in polygon.exterior.coords]
+def convert_polygon_to_list(polygon: shapely.Polygon) -> list[tuple[float, float]]:
+    return [tuple(coord) for coord in polygon.exterior.coords]
 
 
 def calculate_intersection(circle_polygon, demand_polygon):
-
     demand_polygon = Polygon(demand_polygon)
     circle_polygon = Polygon(circle_polygon)
 
@@ -42,29 +31,24 @@ def calculate_intersection(circle_polygon, demand_polygon):
 
 
 def get_coverage_of_flight(
-    flight_path, demands: List[Demand], radius
+    flight_path: tuple[tuple[float, float], str], demands: list[Demand], radius
 ) -> CoverageResult:
-
     start_time = time.time()
 
-    result = {}
+    result: CoverageResult = {}
 
     for point, timestamp in flight_path:
         for demand in demands:
             circle_polygon = create_geodesic_circle(point[0], point[1], radius)
-            coverage_percent, intersection, leftover = calculate_intersection(
-                circle_polygon, demand.polygon
+            coverage_percent, intersection, leftover = calculate_intersection(circle_polygon, demand.polygon)
+
+            result.setdefault(timestamp, {})[demand.id] = DemandCoverage(
+                coverage_percent=coverage_percent,
+                coverage_intersection=intersection,
+                coverage_leftover=leftover,
             )
 
-            result.setdefault(timestamp, {})[demand.id] = {
-                'coverage_percent': coverage_percent,
-                'intersection': intersection,
-                'leftover': leftover,
-            }
-    print(
-        'got coverage of flight path in :--- %s seconds ---'
-        % (time.time() - start_time)
-    )
+    print("got coverage of flight path in :--- %s seconds ---" % (time.time() - start_time))
     return result
 
 
@@ -74,9 +58,7 @@ def add_distance_to_coordinates(old_lat, old_long, distance):
 
     # Convert distance to radians
     delta_lat = distance / (R * math.pi / 180)
-    delta_long = distance / (
-        R * math.cos(math.pi * old_lat / 180) * math.pi / 180
-    )
+    delta_long = distance / (R * math.cos(math.pi * old_lat / 180) * math.pi / 180)
 
     # Calculate new latitude and longitude
     new_lat = old_lat + delta_lat
@@ -89,10 +71,8 @@ def create_geodesic_circle(center_lat, center_long, radius, num_points=50):
     circle_points = []
 
     for i in range(num_points):
-        angle = 360 * i / num_points   # Azimuth
-        point = geodesic(meters=radius).destination(
-            (center_lat, center_long), angle
-        )
+        angle = 360 * i / num_points  # Azimuth
+        point = geodesic(meters=radius).destination((center_lat, center_long), angle)
         circle_points.append((point.latitude, point.longitude))
 
     return circle_points

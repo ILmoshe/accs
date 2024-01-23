@@ -5,9 +5,7 @@ from shapely.geometry import LineString, Polygon
 # Polyline: list[[float, float]]
 
 
-def add_meters_to_coordinates(
-    coordinates, distance_in_meters, azimuth_to_north: int = 90
-):
+def add_meters_to_coordinates(coordinates, distance_in_meters, azimuth_to_north: int = 90):
     lat, lon, alt = coordinates
     destination_point = geodesic(meters=distance_in_meters).destination(
         point=(lat, lon), bearing=azimuth_to_north

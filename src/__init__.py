@@ -1,66 +1,65 @@
-from datetime import datetime, timedelta
+from typing import NamedTuple, TypedDict
 
-import folium
-import numpy as np
+import requests
+from pydantic import BaseModel, Field
 
-
-def generate_flight_vector(
-    num_points, start_lat, start_long, end_lat, end_long, curve_factor
-):
-    coordinates = []
-    timestamps = []
-
-    current_lat = start_lat
-    current_long = start_long
-
-    delta_lat = (end_lat - start_lat) / num_points
-    delta_long = (end_long - start_long) / num_points
-
-    current_time = datetime.utcnow()
-    delta_time = timedelta(minutes=1)
-
-    for _ in range(num_points):
-        coordinates.append([current_lat, current_long])
-        timestamps.append(current_time.isoformat())
-
-        current_lat += delta_lat
-        current_long += (
-            delta_long
-            * (1 - np.cos(np.radians((current_lat + end_lat) / 2)))
-            * curve_factor
-        )
-
-        current_time += delta_time
-
-    return coordinates, timestamps
+API_URL = "https://api.open-elevation.com/api/v1/lookup"
 
 
-# Set parameters for the flight
-num_points = 20
-start_latitude = 30.0
-start_longitude = 34.0
-end_latitude = 40.0
-end_longitude = 36.0
-curve_factor = 0.5  # Adjust this value for the desired curvature (0 to 1)
+class Demand(BaseModel):
+    id: str
+    polygon: list[tuple[float, float]]
+    allowed_azimuth: dict[str, float] = {"from": 0, "to": 360}
+    allowed_elevation: dict[str, float] = {"from": -90, "to": 90}
 
-# Generate flight vector
-flight_coordinates, flight_timestamps = generate_flight_vector(
-    num_points,
-    start_latitude,
-    start_longitude,
-    end_latitude,
-    end_longitude,
-    curve_factor,
-)
 
-# Create a folium map centered around the starting point
-m = folium.Map(location=[start_latitude, start_longitude], zoom_start=6)
+class DemandCoverage(TypedDict):
+    coverage_percent: float
+    coverage_intersection: list[tuple[float, float]]
+    coverage_leftover: list[tuple[float, float]]
 
-# Add the flight path to the map
-for coord in flight_coordinates:
-    folium.Marker(
-        location=[coord[0], coord[1]], icon=folium.Icon(color='blue')
-    ).add_to(m)
 
-# Save the map to an HTML file
-m.save('flight_path_map.html')
+CoverageResult = dict[str, dict[str, DemandCoverage]]
+
+
+class Params(BaseModel):
+    azimuth: float = Field(le=360, ge=0)
+    elevation: float = Field(le=90, ge=-90)
+    coverage_percentage: float = Field(le=100, ge=0)
+    coverage_leftover: list[tuple[float, float]]
+
+
+class Access(BaseModel):
+    demand_id: str
+    flight_id: str
+    start: str
+    end: str
+    params: Params
+
+
+class Point(NamedTuple):
+    lat: float
+    long: float
+    alt: float = 0
+
+
+def get_elevations(points: list[Point]):
+    locations_param = "|".join([f"{lat},{lon}" for lat, lon in points])
+    url = f"{API_URL}?locations={locations_param}"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        elevation_data = response.json().get("results", [])
+        result_points: list[Point] = [
+            Point(
+                data["latitude"],
+                data["longitude"],
+                data["elevation"],
+            )
+            for data in elevation_data
+        ]
+        return result_points
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
+        return None
