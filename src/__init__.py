@@ -25,8 +25,8 @@ CoverageResult = dict[str, dict[str, DemandCoverage]]
 class Params(BaseModel):
     azimuth: float = Field(le=360, ge=0)
     elevation: float = Field(le=90, ge=-90)
-    coverage_percentage: float = Field(le=100, ge=0)
-    coverage_leftover: list[tuple[float, float]]
+    # coverage_percentage: float = Field(le=100, ge=0)
+    # coverage_leftover: list[tuple[float, float]]
 
 
 class Access(BaseModel):
@@ -34,7 +34,7 @@ class Access(BaseModel):
     flight_id: str
     start: str
     end: str
-    params: Params
+    params: Params = None
 
 
 class Point(NamedTuple):
@@ -44,7 +44,7 @@ class Point(NamedTuple):
 
 
 def get_elevations(points: list[Point]):
-    locations_param = "|".join([f"{lat},{lon}" for lat, lon in points])
+    locations_param = "|".join([f"{point.lat},{point.long}" for point in points])
     url = f"{API_URL}?locations={locations_param}"
 
     response = requests.get(url)

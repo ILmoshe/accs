@@ -12,6 +12,8 @@ from data.polygon import (
     fullone,
     not_sure_demand,
 )
+
+from src.access import get_accesses
 from data.polyline import haifa_to_lebanon
 from src.coverage import Demand, create_geodesic_circle, get_coverage_of_flight
 from src.logic import create_casing
@@ -111,10 +113,13 @@ demands = add_demands(
 Map.save("flight_path_map.html")
 
 
-result = calculate_accesses(
-    with_time,
-    demands,
-)
+# result = calculate_accesses(
+#     with_time,
+#     demands,
+# )
+
+
+accesses = get_accesses("my_first_flight", with_time, demands)
 
 
 print("FINISHED")

@@ -1,11 +1,10 @@
 import math
-from functools import lru_cache
 from math import acos, asin, atan2, cos, degrees, pi, radians, sin, sqrt
 
 from geopy.distance import geodesic
 from shapely.geometry import Polygon
 
-from __init__ import Demand, Point, get_elevations
+from . import Demand, Point, get_elevations
 
 
 def calculate_azimuth(observer: Point, target: Point) -> float:
@@ -87,7 +86,6 @@ def calculate_elevation_angle(observer: Point, target: Point) -> float:
     return elevation_angle
 
 
-@lru_cache(maxsize=100)
 def calculate_polygon_centroid(input_polygon: list[tuple[float, float]]) -> Point:
     polygon = Polygon(input_polygon)
 
@@ -117,7 +115,7 @@ def calculate_demands_angels(point: Point | tuple[float, float], demands: list[D
     result = {}
 
     for demand in demands:
-        demand_center_point = calculate_polygon_centroid(demand.polygon)
+        demand_center_point = calculate_polygon_centroid(demand.polygon)  # huge bottleneck, it's super slow
         azimuth = calculate_azimuth(demand_center_point, point)
         elevation = calculate_elevation_angle(demand_center_point, point)
 
