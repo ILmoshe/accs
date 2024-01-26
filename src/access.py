@@ -1,8 +1,8 @@
 import arrow
 
 from . import Access, CoverageResult, Demand, Point
-from .coverage import get_coverage_of_flight
 from .angels import calculate_demands_angels
+from .coverage import get_coverage_of_flight
 
 SENSOR_CAPABILITIES = {"range_in_m": 12_000}
 COVERAGE_THRESHOLD = 60.0  # percentage

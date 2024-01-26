@@ -86,16 +86,18 @@ def calculate_elevation_angle(observer: Point, target: Point) -> float:
     return elevation_angle
 
 
-def calculate_polygon_centroid(input_polygon: list[tuple[float, float]]) -> Point:
-    polygon = Polygon(input_polygon)
+def calculate_demands_centroids(demands: list[Demand]) -> list[Point]:
+    averages = []
 
-    coordinates = list(polygon.exterior.coords)
+    for demand in demands:
+        polygon = Polygon(demand.polygon)
+        coordinates = list(polygon.exterior.coords)
+        avg_x = sum(x for x, y in coordinates) / len(coordinates)
+        avg_y = sum(y for x, y in coordinates) / len(coordinates)
+        averages.append(Point(avg_x, avg_y))
 
-    avg_x = sum(x for x, y in coordinates) / len(coordinates)
-    avg_y = sum(y for x, y in coordinates) / len(coordinates)
-    point_with_alt = get_elevations([Point(avg_x, avg_y)])[0]
-
-    return point_with_alt
+    points_with_alt = get_elevations(averages)
+    return points_with_alt
 
 
 def is_in_range(value: float, value_range: dict) -> bool:
@@ -111,11 +113,13 @@ def calculate_demands_angels(point: Point | tuple[float, float], demands: list[D
     """
     azimuth_full_range = {"from": 0, "to": 360}
     elevation_full_range = {"from": -90, "to": 90}
+    import time
 
     result = {}
-
-    for demand in demands:
-        demand_center_point = calculate_polygon_centroid(demand.polygon)  # huge bottleneck, it's super slow
+    start_time = time.time()
+    demands_center_points = calculate_demands_centroids(demands)  # huge bottleneck, it's super slow
+    print("got alt of demands in :--- %s seconds ---" % (time.time() - start_time))
+    for demand, demand_center_point in zip(demands, demands_center_points):
         azimuth = calculate_azimuth(demand_center_point, point)
         elevation = calculate_elevation_angle(demand_center_point, point)
 
