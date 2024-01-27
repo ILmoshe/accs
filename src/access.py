@@ -89,6 +89,6 @@ def get_accesses(
     for demand in demands:
         accesses_for_demand = access_match(flight_id, demand, coverage_result, angels_result)
         if len(accesses_for_demand):
-            list_of_accesses.append(*accesses_for_demand)
+            list_of_accesses.extend(accesses_for_demand)
 
     return list_of_accesses
