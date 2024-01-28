@@ -66,8 +66,6 @@ def add_flight_path(flight_route):
         ).add_to(Map)
 
 
-
-
 def route_sample():
     """
     I get a basic route and I want to add points in the route
@@ -115,8 +113,6 @@ demands = add_demands(
     not_sure_demand,
     fullone,
 )
-
-
 
 
 accesses = get_accesses("my_first_flight", with_time, demands)

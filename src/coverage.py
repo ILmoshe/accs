@@ -37,7 +37,10 @@ def get_coverage_of_flight(
 
     result: CoverageResult = {}
 
-    for point, timestamp in flight_path:  # Its wrong, we need to iterate over the demands, its much more efficent
+    for (
+        point,
+        timestamp,
+    ) in flight_path:  # Its wrong, we need to iterate over the demands, its much more efficent
         for demand in demands:
             circle_polygon = create_geodesic_circle(point[0], point[1], radius)
             coverage_percent, intersection, leftover = calculate_intersection(circle_polygon, demand.polygon)
