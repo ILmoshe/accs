@@ -30,6 +30,27 @@ def calculate_intersection(circle_polygon, demand_polygon):
     )
 
 
+# def calculate_intersection_raw
+
+
+def calculate_intersection_raw(circle_polygon, demand_polygon) -> tuple[float, Polygon, Polygon]:
+    demand_polygon = Polygon(demand_polygon)
+    circle_polygon = Polygon(circle_polygon)
+
+    intersection: Polygon = circle_polygon.intersection(demand_polygon)
+
+    intersection_area = intersection.area
+    total_polygon_area = demand_polygon.area
+    percentage_intersection = (intersection_area / total_polygon_area) * 100.0
+    leftover_polygon: Polygon = demand_polygon.difference(circle_polygon)
+
+    return (
+        percentage_intersection,
+        intersection,
+        leftover_polygon,
+    )
+
+
 def get_coverage_of_flight(
     flight_path: tuple[tuple[float, float], str], demands: list[Demand], radius
 ) -> CoverageResult:
