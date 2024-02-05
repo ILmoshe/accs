@@ -8,8 +8,20 @@ from shapely.geometry import Polygon
 from . import CoverageResult, Demand, DemandCoverage
 
 
-def convert_polygon_to_list(polygon: shapely.Polygon) -> list[tuple[float, float]]:
-    return [tuple(coord) for coord in polygon.exterior.coords]
+def convert_multipolygon_to_list(multipolygon: shapely.MultiPolygon):
+    result = []
+    for polygon in list(multipolygon.geoms):
+        converted_polygon = convert_polygon_to_list(polygon)
+        result.append(converted_polygon)
+    return result
+
+
+def convert_polygon_to_list(shape: shapely.Polygon | shapely.MultiPolygon) -> list[tuple[float, float]]:
+    try:
+        result = [tuple(coord) for coord in shape.exterior.coords]
+    except AttributeError as AE:
+        result = convert_multipolygon_to_list(shape)
+    return result
 
 
 def calculate_intersection(circle_polygon, demand_polygon):
