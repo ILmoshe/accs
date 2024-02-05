@@ -96,9 +96,3 @@ polyline = [
     [35.331552, 33.664549],
     [35.3435525, 33.6729257],
 ]
-# total_time = 30 * 60  # 30 minutes in seconds
-# interval = 20  # seconds
-#
-# result_polyline = interpolate_polyline(polyline, total_time, interval)
-# print(result_polyline)
-# print(len(result_polyline))
