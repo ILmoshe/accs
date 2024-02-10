@@ -93,8 +93,8 @@ demands = add_demands_to_map(
     not_sure_demand,
     fullone,
     long_demand,
-    # near_haifa,
-    b,
+    near_haifa,
+    # b,
 )
 
 
@@ -140,14 +140,14 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
     for accesses_for_demand, color, demand in zip(accesses, colors, demands):
         if accesses_for_demand is None:
             continue
-        add_accesses_to_popup(accesses_for_demand, demand)
+        # add_accesses_to_popup(accesses_for_demand, demand)
         for access in accesses_for_demand:
             index_of_start_access_in_flight_path = binary_search(flight_times, access["start"])
             index_of_end_access_in_flight_path = binary_search(flight_times, access["end"])
             for index in range(index_of_end_access_in_flight_path - index_of_start_access_in_flight_path):
                 intersection_polygon = access["coverages"][index]["coverage"]["intersection"]
                 intersection_centroid = Polygon(intersection_polygon).centroid
-                if intersection_centroid:
+                if intersection_centroid:  # TODO: take a deep look when this shit happens
                     intersection_centroid = [intersection_centroid.x, intersection_centroid.y]
                 else:
                     continue
