@@ -150,77 +150,47 @@ def closest_point_index_linear_search(sorted_array, target_point):
     return closest_index
 
 
+def filter_appropriate_points(flight, target_point, distance_in_m=CAMERA_CAPABILITY):
+    flight_indexes = set()
+    for index, point in enumerate(flight):
+        distance = geodesic(target_point, point[:1][0]).meters
+        THRESHOLD = 1500  # some const threshold, not sure if needed
+        if distance - THRESHOLD <= distance_in_m:
+            flight_indexes.add(index)
+
+    return flight_indexes
+
+
 def calc_access_for_demand(flight_path, flight_path_with_casing, demand: Demand):
     _, casing_intersection, _ = calculate_intersection_raw(flight_path_with_casing, demand.polygon)
 
     if not casing_intersection:
         return
 
-    # we will do it beforehand to improve performance
-    sorted_flight = create_sorted_array(flight_path)
-
     traveled_indexes = set()
     coverage_result = {}  # the key is the index
 
     for point in casing_intersection.exterior.coords:
-        index = closest_point_index_binary_search(sorted_flight, (point[0], point[1]))
-        if index in traveled_indexes:
-            continue
-
-        forwordtrack, backtrack = True, True
-        for i in range(len(flight_path)):
-            forwordtrack_index = index + i
-            backtrack_index = index - i - 1
-
-            should_continue_forwordtrack = (
-                forwordtrack_index < len(flight_path)
-                and forwordtrack
-                and forwordtrack_index not in traveled_indexes
+        indexes = filter_appropriate_points(flight_path, point)
+        for index in indexes:
+            if index in traveled_indexes:
+                continue
+            traveled_indexes.add(index)
+            relevant_flight_point = flight_path[index][0]
+            coverage_percent, intersection, leftover = get_intersection(
+                relevant_flight_point, demand.polygon
             )
-            if should_continue_forwordtrack:
-                relevant_flight_point_following = flight_path[forwordtrack_index][0]
-                coverage_percent, intersection, leftover = get_intersection(
-                    relevant_flight_point_following, demand.polygon
-                )
-                traveled_indexes.add(forwordtrack_index)
-                if not intersection:
-                    forwordtrack = False
-                if forwordtrack:
-                    coverage_result[str(forwordtrack_index)] = {
-                        "coverage": {
-                            "coverage_percent": coverage_percent,
-                            "intersection": intersection,
-                            "leftover": leftover,
-                        },
-                    }
-            else:
-                forwordtrack = False
+            if not intersection:
+                continue
+            coverage_result[str(index)] = {
+                "coverage": {
+                    "coverage_percent": coverage_percent,
+                    "intersection": intersection,
+                    "leftover": leftover,
+                },
+            }
 
-            should_continue_backtrack = (
-                backtrack_index >= 0 and backtrack and backtrack_index not in traveled_indexes
-            )
-            if should_continue_backtrack:
-                relevant_flight_point_back = flight_path[backtrack_index][0]
-                coverage_percent, intersection, leftover = get_intersection(
-                    relevant_flight_point_back, demand.polygon
-                )
-                traveled_indexes.add(backtrack_index)
-                if not intersection:
-                    backtrack = False
-                if backtrack:
-                    coverage_result[str(backtrack_index)] = {
-                        "coverage": {
-                            "coverage_percent": coverage_percent,
-                            "intersection": intersection,
-                            "leftover": leftover,
-                        },
-                    }
-            else:
-                backtrack = False
-
-            if not forwordtrack and not backtrack:
-                break
-
+    print(f"traveled indexes: {traveled_indexes}")
     (
         flight_path_who_has_cover,
         ordered_indexes_coverage,
@@ -259,7 +229,7 @@ def build_accesses(angles_result, demand, flight_path, ordered_coverage_result, 
             index = binary_search(ordered_indexes_coverage, num)
             azimuth, elevation = angles_result[index]
             if is_in_range(azimuth, demand.allowed_azimuth) and is_in_range(
-                elevation, demand.allowed_elevation
+                    elevation, demand.allowed_elevation
             ):
                 access["coverages"].append(ordered_coverage_result[str(num)])
                 access["angels"].append((azimuth, elevation))
@@ -281,7 +251,7 @@ def get_demand_centroid(demand):
 
 
 def pre_process_coverage_result(flight_path, result):
-    ordered_coverage_result = dict(sorted(result.items()))
+    ordered_coverage_result = dict(sorted(result.items(), key=lambda x: int(x[0])))
     ordered_indexes_coverage = [int(index) for index in ordered_coverage_result.keys()]
     flight_path_with_coverage = [
         _Point(lat=flight_path[index][0][0], long=flight_path[index][0][1])
