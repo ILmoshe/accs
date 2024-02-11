@@ -110,21 +110,20 @@ def generate_random_colors(num_colors):
         colors.append(hex_color)
 
     return colors
-def add_accesses_to_popup(accesses, demand):
+
+
+def add_accesses_to_popup(accesses, demand, color):
     html = f"""
         <h1>Demand Accesses</h1><br>
-            <ul>
-              <li>Coffee</li>
-              <li>Tea</li>
-              <li>Milk</li>
-            </ul>
-        <p>
-        <code>
-            from numpy import *<br>
-            exp(-2*pi)
-        </code>
-        </p>
+            <ul>\n
         """
+    for access in accesses:
+        style = "<br/>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <br/>"
+        access_start = f"{style}<li>Start: {access['start']}<br/>"
+        access_end = f"<li>end: {access['end']}<br/>"
+        html += access_start + access_end
+
+    html += "</ul>"
     folium.Polygon(
         demand.polygon,
         tooltip=demand.id,
@@ -140,7 +139,7 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
     for accesses_for_demand, color, demand in zip(accesses, colors, demands):
         if accesses_for_demand is None:
             continue
-        # add_accesses_to_popup(accesses_for_demand, demand)
+        add_accesses_to_popup(accesses_for_demand, demand, color)
         for access in accesses_for_demand:
             index_of_start_access_in_flight_path = binary_search(flight_times, access["start"])
             index_of_end_access_in_flight_path = binary_search(flight_times, access["end"])
@@ -171,7 +170,6 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
                 ).add_to(Map)
 
 
-
 start_time = time.time()
 accesses = []
 for demand in demands:
@@ -180,7 +178,7 @@ for demand in demands:
 print(f"got access of {len(demands)} demands path in :--- %s seconds ---" % (time.time() - start_time))
 
 
-add_accesses_to_flight_on_map(accesses,demands, flight_path)
+add_accesses_to_flight_on_map(accesses, demands, flight_path)
 
 
 Map.save("flight_path_map.html")

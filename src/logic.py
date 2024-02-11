@@ -73,9 +73,7 @@ def calc_access_for_demand(flight_path, flight_path_with_casing, demand: Demand)
                 continue
             traveled_indexes.add(index)
             relevant_flight_point = flight_path[index][0]
-            coverage_percent, intersection, leftover = get_intersection(
-                relevant_flight_point, demand.polygon
-            )
+            coverage_percent, intersection, leftover = get_intersection(relevant_flight_point, demand.polygon)
             if not intersection:
                 continue
             coverage_result[str(index)] = {
@@ -125,7 +123,7 @@ def build_accesses(angles_result, demand, flight_path, ordered_coverage_result, 
             index = binary_search(ordered_indexes_coverage, num)
             azimuth, elevation = angles_result[index]
             if is_in_range(azimuth, demand.allowed_azimuth) and is_in_range(
-                    elevation, demand.allowed_elevation
+                elevation, demand.allowed_elevation
             ):
                 access["coverages"].append(ordered_coverage_result[str(num)])
                 access["angels"].append((azimuth, elevation))
