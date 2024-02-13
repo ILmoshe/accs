@@ -94,8 +94,11 @@ demands = add_demands_to_map(
     fullone,
     long_demand,
     near_haifa,
-    # b,
+    Even,
+Idan
 )
+
+# demands[-1].allowed_azimuth = {"from": 0, "to": 294}
 
 
 def generate_random_colors(num_colors):
