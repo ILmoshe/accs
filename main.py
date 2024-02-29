@@ -8,11 +8,11 @@ from folium.plugins import Draw
 from shapely.geometry import Polygon
 
 from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
+from data import interpolate_polyline
 from data.polygon import *
-from data.polyline import haifa_to_lebanon
+from data.polyline import circle, haifa_to_lebanon
 from src.coverage import Demand
 from src.logic import binary_search, calc_access_for_demand, create_casing
-from data import interpolate_polyline
 
 start_latitude = 32.7526326
 start_longitude = 35.0701214
@@ -28,13 +28,10 @@ def add_time(coord):
     return result
 
 
-with_time = add_time(haifa_to_lebanon)
-
-
-def add_flight_path_to_map(flight_route):
+def add_flight_path_to_map(flight_route, color):
     kw = {
         "prefix": "fa",
-        "color": "red",
+        "color": color,
         "icon": "plane",
     }
     icon_angle = 270
@@ -73,29 +70,25 @@ Draw(export=True).add_to(Map)
 
 total_time = 30 * 60  # 30 minutes in seconds
 interval = 20  # seconds
-result_polyline = interpolate_polyline(haifa_to_lebanon, total_time, interval)
-path_case = create_casing(result_polyline, CAMERA_CAPABILITY)
-
-
-# Flight path
+result_polyline1 = interpolate_polyline(haifa_to_lebanon, total_time, interval)
+path_case1 = create_casing(result_polyline1, CAMERA_CAPABILITY)
 folium.PolyLine(haifa_to_lebanon, tooltip="Flight path").add_to(Map)
-folium.Polygon(locations=path_case, color="blue").add_to(Map)
-flight_path = add_time(result_polyline)
-
-add_flight_path_to_map(flight_path)
+folium.Polygon(locations=path_case1, color="blue").add_to(Map)
+flight_path1 = add_time(result_polyline1)
+add_flight_path_to_map(flight_path1, "blue")
 
 
 demands = add_demands_to_map(
-    demand_near_sea,
+    # demand_near_sea,
     demand_not_near_sea,
     demand_in_middle,
     demand_huge_near_sea,
     not_sure_demand,
-    fullone,
+    # fullone,
     long_demand,
     near_haifa,
     Even,
-Idan
+    Idan,
 )
 
 # demands[-1].allowed_azimuth = {"from": 0, "to": 294}
@@ -105,7 +98,7 @@ def generate_random_colors(num_colors):
     colors = []
 
     for _ in range(num_colors):
-        red = random.randint(0, 255)
+        red = random.randint(0, 150)
         green = random.randint(0, 255)
         blue = random.randint(0, 255)
 
@@ -173,15 +166,23 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
                 ).add_to(Map)
 
 
-start_time = time.time()
-accesses = []
-for demand in demands:
-    result = calc_access_for_demand(flight_path, path_case, demand)
-    accesses.append(result)
-print(f"got access of {len(demands)} demands path in :--- %s seconds ---" % (time.time() - start_time))
+# result_polyline2 = interpolate_polyline(circle, total_time, interval)
+# path_case2 = create_casing(result_polyline2, CAMERA_CAPABILITY)
+# folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
+# folium.Polygon(locations=path_case2, color="red").add_to(Map)
+# flight_path2 = add_time(result_polyline2)
+# add_flight_path_to_map(flight_path2, "red")
 
+iterate_over = zip([flight_path1], [path_case1])
 
-add_accesses_to_flight_on_map(accesses, demands, flight_path)
+for path, case in iterate_over:
+    start_time = time.time()
+    accesses = []
+    for demand in demands:
+        result = calc_access_for_demand(path, case, demand)
+        accesses.append(result)
+    print(f"got access of {len(demands)} demands path in :--- %s seconds ---" % (time.time() - start_time))
+    add_accesses_to_flight_on_map(accesses, demands, path)
 
 
 Map.save("flight_path_map.html")

@@ -4,8 +4,9 @@ from geopy.distance import geodesic
 from shapely.geometry import LineString, Point, Polygon
 
 from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
-from src import Point as _Point, Demand
-from src import get_elevations
+from src import Demand
+from src import Point as _Point
+from src import get_altitude, get_elevations
 from src.angels import calculate_azimuth, calculate_elevation_angle, is_in_range
 from src.coverage import (
     calculate_intersection,
@@ -140,7 +141,7 @@ def build_accesses(angles_result, demand, flight_path, ordered_coverage_result, 
 def get_demand_centroid(demand):
     demand_centroid: Point = Polygon(demand).centroid
     demand_centroid = _Point(lat=demand_centroid.x, long=demand_centroid.y)
-    [demand_centroid] = get_elevations([demand_centroid])
+    [demand_centroid] = get_altitude([demand_centroid])
     return demand_centroid
 
 

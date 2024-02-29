@@ -1,5 +1,7 @@
+import os.path
 from typing import NamedTuple, TypedDict
 
+import numpy as np
 import requests
 from pydantic import BaseModel, Field
 
@@ -62,4 +64,59 @@ def get_elevations(points: list[Point]):
         return result_points
     else:
         print(f"Error: {response.status_code}, {response.text}")
-        return None
+        result_points: list[Point] = [
+            Point(
+                data.lat,
+                data.long,
+                alt=0,
+            )
+            for data in points
+        ]
+        return result_points
+
+
+def read_hgt_file(filename):
+    """
+    Read elevation data from a .hgt file.
+    """
+    with open(filename, "rb") as f:
+        elevation_data = np.fromfile(f, np.dtype(">i2"), -1).reshape((3601, 3601))
+    return elevation_data
+
+
+def get_elevation(lat, lon, elevation_data):
+    """
+    Get elevation at given latitude and longitude.
+    """
+    lat_row = int((1 - (lat - int(lat))) * 3600)
+    lon_row = int((lon - int(lon)) * 3600)
+
+    return elevation_data[lat_row, lon_row]
+
+
+def get_altitude(points: list[Point], hgt_files_directory: str = "hgt") -> list[Point]:
+    """
+    Get altitude at given latitude and longitude using appropriate .hgt file.
+    """
+    loaded_hgt = {}
+    elevation_result = []
+
+    for point in points:
+        lat, lon = point.lat, point.long
+        hgt_file = f"{hgt_files_directory}/N{int(lat):02d}E{int(lon):03d}.hgt"
+        if not os.path.isfile(hgt_file):
+            elevation_result.append(0.0)
+        if hgt_file in loaded_hgt:
+            elevation_data = loaded_hgt[hgt_file]
+        else:
+            elevation_data = read_hgt_file(hgt_file)
+            loaded_hgt[hgt_file] = elevation_data
+
+        elevation_result.append(get_elevation(lat, lon, elevation_data))
+
+    points_result = []
+    for point, elevation in zip(points, elevation_result):
+        points_result.append(Point(point.lat, point.long, elevation))
+
+    return points_result
+
