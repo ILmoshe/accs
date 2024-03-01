@@ -22,7 +22,12 @@ def add_time(coord):
     result = []
     for index, point in enumerate(coord):
         if len(result):
-            result.append((point, arrow.get(result[-1][1]).shift(seconds=INTERVAL_SAMPLE).format()))
+            result.append(
+                (
+                    point,
+                    arrow.get(result[-1][1]).shift(seconds=INTERVAL_SAMPLE).format(),
+                )
+            )
         else:
             result.append((point, arrow.utcnow().format()))
     return result
@@ -143,7 +148,10 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
                 intersection_polygon = access["coverages"][index]["coverage"]["intersection"]
                 intersection_centroid = Polygon(intersection_polygon).centroid
                 if intersection_centroid:  # TODO: take a deep look when this shit happens
-                    intersection_centroid = [intersection_centroid.x, intersection_centroid.y]
+                    intersection_centroid = [
+                        intersection_centroid.x,
+                        intersection_centroid.y,
+                    ]
                 else:
                     continue
                 flight_point = flight_path[index_of_start_access_in_flight_path + index][0]

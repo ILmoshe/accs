@@ -10,3 +10,4 @@ pydantic~=2.5.3
 requests~=2.31.0
 pyproj~=3.6.1
 geopandas~=0.14.2
+rasterio

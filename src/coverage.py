@@ -16,7 +16,9 @@ def convert_multipolygon_to_list(multipolygon: shapely.MultiPolygon):
     return result
 
 
-def convert_polygon_to_list(shape: shapely.Polygon | shapely.MultiPolygon) -> list[tuple[float, float]]:
+def convert_polygon_to_list(
+    shape: shapely.Polygon | shapely.MultiPolygon,
+) -> list[tuple[float, float]]:
     try:
         result = [tuple(coord) for coord in shape.exterior.coords]
     except AttributeError as AE:

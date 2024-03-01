@@ -100,13 +100,23 @@ def calc_access_for_demand(flight_path, flight_path_with_casing, demand: Demand)
     angles_result = calculate_angels(demand_centroid, flight_path_who_has_cover)
 
     accesses_result = build_accesses(
-        angles_result, demand, flight_path, ordered_coverage_result, ordered_indexes_coverage
+        angles_result,
+        demand,
+        flight_path,
+        ordered_coverage_result,
+        ordered_indexes_coverage,
     )
 
     return accesses_result
 
 
-def build_accesses(angles_result, demand, flight_path, ordered_coverage_result, ordered_indexes_coverage):
+def build_accesses(
+    angles_result,
+    demand,
+    flight_path,
+    ordered_coverage_result,
+    ordered_indexes_coverage,
+):
     chunks = split_to_chunks(ordered_indexes_coverage)
     accesses_result = []
     for chunk in chunks:

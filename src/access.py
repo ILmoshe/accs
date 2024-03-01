@@ -28,7 +28,11 @@ def is_angle_access(demand: Demand, angle_result):
 
 
 def access_match(
-    flight_id, demand: Demand, coverage: CoverageResult, angels_result, flight_threshold_in_sec: float = 60
+    flight_id,
+    demand: Demand,
+    coverage: CoverageResult,
+    angels_result,
+    flight_threshold_in_sec: float = 60,
 ):
     """
     For now, we are not adding the 'params' because it will make it much complicated.

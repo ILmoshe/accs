@@ -119,4 +119,3 @@ def get_altitude(points: list[Point], hgt_files_directory: str = "hgt") -> list[
         points_result.append(Point(point.lat, point.long, elevation))
 
     return points_result
-
