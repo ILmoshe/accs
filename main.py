@@ -8,10 +8,11 @@ from folium.plugins import Draw
 from shapely.geometry import Polygon
 
 from line_of_sight.FOV import intersections as camera_fov
-from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
+from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
 from data import interpolate_polyline
 from data.polygon import *
-from data.polyline import haifa_to_lebanon
+from data.polyline import haifa_to_lebanon, circle
+from src import Flight, Sensor
 from src.coverage import Demand
 from src.logic import binary_search, calc_access_for_demand, create_casing
 
@@ -77,11 +78,23 @@ Draw(export=True).add_to(Map)
 total_time = 30 * 60  # 30 minutes in seconds
 interval = 20  # seconds
 result_polyline1 = interpolate_polyline(haifa_to_lebanon, total_time, interval)
-path_case1 = create_casing(result_polyline1, CAMERA_CAPABILITY)
+path_case1 = create_casing(result_polyline1, CAMERA_MAX_DISTANCE)
 folium.PolyLine(haifa_to_lebanon, tooltip="Flight path").add_to(Map)
 folium.Polygon(locations=path_case1, color="blue").add_to(Map)
 flight_path1 = add_time(result_polyline1)
-add_flight_path_to_map(flight_path1, "blue")
+
+sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300)
+flight1 = Flight(
+    height_meters=5000,
+    path_with_time=flight_path1,
+    path_case=path_case1,
+    camera_azimuth=-80,
+    camera_elevation=-15,
+    sensor=sensor1,
+)
+
+
+add_flight_path_to_map(flight1.path_with_time, "blue")
 
 
 demands = add_demands_to_map(
@@ -175,14 +188,25 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
                 ).add_to(Map)
 
 
-# result_polyline2 = interpolate_polyline(circle, total_time, interval)
-# path_case2 = create_casing(result_polyline2, CAMERA_CAPABILITY)
-# folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
-# folium.Polygon(locations=path_case2, color="red").add_to(Map)
-# flight_path2 = add_time(result_polyline2)
-# add_flight_path_to_map(flight_path2, "red")
+result_polyline2 = interpolate_polyline(circle, total_time, interval)
+path_case2 = create_casing(result_polyline2, CAMERA_MAX_DISTANCE)
+flight_path2 = add_time(result_polyline2)
+folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
+folium.Polygon(locations=path_case2, color="red").add_to(Map)
+add_flight_path_to_map(flight_path2, "red")
 
-iterate_over = zip([flight_path1], [path_case1])
+sensor2 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300)
+flight2 = Flight(
+    height_meters=5000,
+    path_with_time=flight_path2,
+    path_case=path_case2,
+    camera_azimuth=-80,
+    camera_elevation=-15,
+    sensor=sensor1,
+)
+
+
+iterate_over = zip([flight1.path_with_time, flight2.path_with_time], [flight1.path_case, flight2.path_case])
 
 
 for path, case in iterate_over:

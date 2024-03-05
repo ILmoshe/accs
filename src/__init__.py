@@ -1,5 +1,5 @@
 import os.path
-from typing import NamedTuple, TypedDict
+from typing import NamedTuple, TypedDict, Any
 
 import numpy as np
 import requests
@@ -43,6 +43,23 @@ class Point(NamedTuple):
     lat: float
     long: float
     alt: float = 0
+
+
+class Sensor(BaseModel):
+    name: str = "my_sensor"
+    width_mm: float
+    height_mm: float
+    focal_length_mm: float
+
+
+class Flight(BaseModel):
+    id: str = "flight_id"
+    height_meters: float
+    path_with_time: list[tuple[Any, str]]
+    path_case: list[list]
+    camera_azimuth: float
+    camera_elevation: float
+    sensor: Sensor
 
 
 def get_elevations(points: list[Point]):

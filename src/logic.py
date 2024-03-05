@@ -3,7 +3,7 @@ import time
 from geopy.distance import geodesic
 from shapely.geometry import LineString, Point, Polygon
 
-from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
+from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
 from src import Demand
 from src import Point as _Point
 from src import get_altitude
@@ -47,7 +47,7 @@ def create_casing(polyline, distance_meters: float):
     return casing_points
 
 
-def filter_appropriate_points(flight, target_point, distance_in_m=CAMERA_CAPABILITY):
+def filter_appropriate_points(flight, target_point, distance_in_m=CAMERA_MAX_DISTANCE):
     flight_indexes = set()
     for index, point in enumerate(flight):
         distance = geodesic(target_point, point[:1][0]).meters
@@ -209,6 +209,6 @@ def split_to_chunks(arr):
     return result
 
 
-def get_intersection(point, demand, radius=CAMERA_CAPABILITY):
+def get_intersection(point, demand, radius=CAMERA_MAX_DISTANCE):
     point_radius = create_geodesic_circle(point[0], point[1], radius=radius)
     return calculate_intersection(point_radius, demand)
