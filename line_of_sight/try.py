@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def calculate_image_plane(focal_length, sensor_size, azimuth, elevation):
@@ -94,7 +93,14 @@ ax.plot(
 )
 
 # Plot the focal point
-ax.scatter(focal_point[0], focal_point[1], focal_point[2], c="g", marker="o", label="Focal Point")
+ax.scatter(
+    focal_point[0],
+    focal_point[1],
+    focal_point[2],
+    c="g",
+    marker="o",
+    label="Focal Point",
+)
 
 # Plot the direction vector
 ax.quiver(

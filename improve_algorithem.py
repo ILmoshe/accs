@@ -1,6 +1,6 @@
 import geopandas as gpd
 from pyproj import Geod, Transformer
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Point
 
 # Load flight path and demands data
 flight_path = gpd.read_file("flight_path.geojson")

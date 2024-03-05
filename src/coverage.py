@@ -21,7 +21,7 @@ def convert_polygon_to_list(
 ) -> list[tuple[float, float]]:
     try:
         result = [tuple(coord) for coord in shape.exterior.coords]
-    except AttributeError as AE:
+    except AttributeError:
         result = convert_multipolygon_to_list(shape)
     return result
 

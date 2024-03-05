@@ -6,7 +6,7 @@ from shapely.geometry import LineString, Point, Polygon
 from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
 from src import Demand
 from src import Point as _Point
-from src import get_altitude, get_elevations
+from src import get_altitude
 from src.angels import calculate_azimuth, calculate_elevation_angle, is_in_range
 from src.coverage import (
     calculate_intersection,
@@ -96,7 +96,7 @@ def calc_access_for_demand(flight_path, flight_path_with_casing, demand: Demand)
 
     start_time = time.time()
     demand_centroid = get_demand_centroid(demand.polygon)
-    print(f"got alt of  demand  path in :--- %s seconds ---" % (time.time() - start_time))
+    print("got alt of  demand  path in :--- %s seconds ---" % (time.time() - start_time))
     angles_result = calculate_angels(demand_centroid, flight_path_who_has_cover)
 
     accesses_result = build_accesses(

@@ -1,5 +1,5 @@
 import math
-from math import acos, asin, atan2, cos, degrees, pi, radians, sin, sqrt
+from math import asin, atan2, cos, degrees, radians, sin, sqrt
 
 from geopy.distance import geodesic
 from shapely.geometry import Polygon

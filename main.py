@@ -7,10 +7,11 @@ import folium
 from folium.plugins import Draw
 from shapely.geometry import Polygon
 
+from line_of_sight.FOV import intersections as camera_fov
 from const import CAMERA_CAPABILITY, INTERVAL_SAMPLE
 from data import interpolate_polyline
 from data.polygon import *
-from data.polyline import circle, haifa_to_lebanon
+from data.polyline import haifa_to_lebanon
 from src.coverage import Demand
 from src.logic import binary_search, calc_access_for_demand, create_casing
 
@@ -84,7 +85,7 @@ add_flight_path_to_map(flight_path1, "blue")
 
 
 demands = add_demands_to_map(
-    # demand_near_sea,
+    demand_near_sea,
     demand_not_near_sea,
     demand_in_middle,
     demand_huge_near_sea,
@@ -114,7 +115,7 @@ def generate_random_colors(num_colors):
 
 
 def add_accesses_to_popup(accesses, demand, color):
-    html = f"""
+    html = """
         <h1>Demand Accesses</h1><br>
             <ul>\n
         """
@@ -183,6 +184,7 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
 
 iterate_over = zip([flight_path1], [path_case1])
 
+
 for path, case in iterate_over:
     start_time = time.time()
     accesses = []
@@ -193,5 +195,13 @@ for path, case in iterate_over:
     add_accesses_to_flight_on_map(accesses, demands, path)
 
 
+folium.Polygon(
+    locations=camera_fov,
+    weight=1,
+    fill_opacity=1,
+    tooltip="camera FOV",
+    fill=True,
+    color="green",
+).add_to(Map)
 Map.save("flight_path_map.html")
 print("FINISHED")
