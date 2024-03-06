@@ -137,9 +137,9 @@ def calculate_demands_angels(point: Point | tuple[float, float], demands: list[D
     return result
 
 
-# observer = Point(32.753066, 35.264912, 10000)
+# observer = Point(32.753066, 35.264912)
 # target = Point(32.775584, 35.264397)
-
+#
 # azimuth = calculate_azimuth(observer, target)
 # print(f"Azimuth from point_center to point_cypress: {azimuth} degrees")
 

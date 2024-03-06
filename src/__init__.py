@@ -1,9 +1,15 @@
+import math
 import os.path
-from typing import NamedTuple, TypedDict, Any
+from typing import Any, NamedTuple, Optional, TypedDict
 
 import numpy as np
 import requests
-from pydantic import BaseModel, Field
+from geopy import distance
+from pydantic import BaseModel, Field, model_validator
+from shapely.geometry import Polygon
+from typing_extensions import Self
+
+from line_of_sight import get_fov_polygon
 
 API_URL = "https://api.open-elevation.com/api/v1/lookup"
 
@@ -50,6 +56,27 @@ class Sensor(BaseModel):
     width_mm: float
     height_mm: float
     focal_length_mm: float
+    image_width_px: int
+
+
+def get_max_camera_capability(fov_polygon, focal_point: list[float, float, float]) -> float:
+    curr_distance_in_meters = -1
+    for point in fov_polygon:
+        flat_distance = distance.distance(focal_point[:2], point).meters
+        euclidian_distance = math.sqrt(flat_distance**2 + (focal_point[2] - 0) ** 2)
+        curr_distance_in_meters = max(curr_distance_in_meters, euclidian_distance)
+    return curr_distance_in_meters
+
+
+def calculate_gsd_in_cm(sensor: Sensor, fov_polygon, focal_point):
+    center = Polygon(fov_polygon).centroid  # here maybe call to get elevation
+    centroid = Point(lat=center.x, long=center.y)
+    [centroid] = get_altitude([centroid])
+    flat_distance = distance.distance(focal_point[:2], [centroid.lat, centroid.long]).meters
+    euclidian_distance = math.sqrt(flat_distance**2 + (focal_point[2] - centroid[2]) ** 2)
+
+    GSD = (euclidian_distance * sensor.width_mm) / (sensor.focal_length_mm * sensor.image_width_px)
+    return GSD * 100
 
 
 class Flight(BaseModel):
@@ -60,6 +87,21 @@ class Flight(BaseModel):
     camera_azimuth: float
     camera_elevation: float
     sensor: Sensor
+
+    camera_capability_meters: Optional[float] = None
+    gsd: Optional[float] = None
+    fov_polygon: Optional[list[list[float]]] = None
+
+    @model_validator(mode="after")
+    def add_relevant_fields(self) -> Self:
+        focal_point = [*self.path_with_time[0][0], self.height_meters]
+        fov_polygon = get_fov_polygon(self.sensor, [self.camera_azimuth, self.camera_elevation], focal_point)
+
+        self.gsd = calculate_gsd_in_cm(self.sensor, fov_polygon, focal_point)
+        self.camera_capability_meters = get_max_camera_capability(fov_polygon, focal_point)
+        self.fov_polygon = fov_polygon
+
+        return self
 
 
 def get_elevations(points: list[Point]):

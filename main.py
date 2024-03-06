@@ -7,14 +7,20 @@ import folium
 from folium.plugins import Draw
 from shapely.geometry import Polygon
 
-from line_of_sight.FOV import intersections as camera_fov
 from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
 from data import interpolate_polyline
 from data.polygon import *
-from data.polyline import haifa_to_lebanon, circle
+from data.polyline import circle, haifa_to_lebanon
+from line_of_sight import get_fov_polygon
+from line_of_sight.FOV import intersections as camera_fov
 from src import Flight, Sensor
 from src.coverage import Demand
-from src.logic import binary_search, calc_access_for_demand, create_casing
+from src.logic import (
+    binary_search,
+    calc_access_for_demand,
+    calc_access_for_demand1,
+    create_casing,
+)
 
 start_latitude = 32.7526326
 start_longitude = 35.0701214
@@ -83,15 +89,17 @@ folium.PolyLine(haifa_to_lebanon, tooltip="Flight path").add_to(Map)
 folium.Polygon(locations=path_case1, color="blue").add_to(Map)
 flight_path1 = add_time(result_polyline1)
 
-sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300)
+sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=400, image_width_px=12400)
 flight1 = Flight(
     height_meters=5000,
     path_with_time=flight_path1,
     path_case=path_case1,
-    camera_azimuth=-80,
-    camera_elevation=-15,
+    camera_azimuth=-89,
+    camera_elevation=-16,
     sensor=sensor1,
 )
+print(flight1.camera_capability_meters)
+flight1.path_case = create_casing(result_polyline1, flight1.camera_capability_meters)
 
 
 add_flight_path_to_map(flight1.path_with_time, "blue")
@@ -188,44 +196,57 @@ def add_accesses_to_flight_on_map(accesses, demands, flight_path):
                 ).add_to(Map)
 
 
-result_polyline2 = interpolate_polyline(circle, total_time, interval)
-path_case2 = create_casing(result_polyline2, CAMERA_MAX_DISTANCE)
-flight_path2 = add_time(result_polyline2)
-folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
-folium.Polygon(locations=path_case2, color="red").add_to(Map)
-add_flight_path_to_map(flight_path2, "red")
+# result_polyline2 = interpolate_polyline(circle, total_time, interval)
+# path_case2 = create_casing(result_polyline2, CAMERA_MAX_DISTANCE)
+# flight_path2 = add_time(result_polyline2)
+# folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
+# folium.Polygon(locations=path_case2, color="red").add_to(Map)
+# add_flight_path_to_map(flight_path2, "red")
+#
+# sensor2 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300, image_width_px=10_000)
+# flight2 = Flight(
+#     height_meters=5000,
+#     path_with_time=flight_path2,
+#     path_case=path_case2,
+#     camera_azimuth=-80,
+#     camera_elevation=-15,
+#     sensor=sensor1,
+# )
 
-sensor2 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300)
-flight2 = Flight(
-    height_meters=5000,
-    path_with_time=flight_path2,
-    path_case=path_case2,
-    camera_azimuth=-80,
-    camera_elevation=-15,
-    sensor=sensor1,
-)
 
-
-iterate_over = zip([flight1.path_with_time, flight2.path_with_time], [flight1.path_case, flight2.path_case])
+iterate_over = zip([flight1.path_with_time], [flight1.path_case])
 
 
 for path, case in iterate_over:
     start_time = time.time()
     accesses = []
     for demand in demands:
-        result = calc_access_for_demand(path, case, demand)
+        result = calc_access_for_demand1(flight1, demand)
         accesses.append(result)
     print(f"got access of {len(demands)} demands path in :--- %s seconds ---" % (time.time() - start_time))
     add_accesses_to_flight_on_map(accesses, demands, path)
 
+# from line_of_sight import get_fov_polygon
+#
+for index, point in enumerate(flight1.path_with_time):
+    # if index == 1:
+    #     break
+    focal_point = [*point[0], flight1.height_meters]
+    fov_polygon = get_fov_polygon(
+        flight1.sensor, [flight1.camera_azimuth, flight1.camera_elevation], focal_point
+    )
+    folium.Polygon(
+        locations=fov_polygon,
+        weight=0.01,
+        fill_opacity=0.3,
+        tooltip="camera FOV",
+        fill=True,
+        color="green",
+    ).add_to(Map)
 
-folium.Polygon(
-    locations=camera_fov,
-    weight=1,
-    fill_opacity=1,
-    tooltip="camera FOV",
-    fill=True,
-    color="green",
-).add_to(Map)
+
+print(f"GSD fligth1:{flight1.gsd}")
+
+
 Map.save("flight_path_map.html")
 print("FINISHED")

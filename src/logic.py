@@ -1,10 +1,11 @@
+import math
 import time
 
-from geopy.distance import geodesic
+from geopy.distance import distance, geodesic
 from shapely.geometry import LineString, Point, Polygon
 
 from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
-from src import Demand
+from src import Demand, Flight
 from src import Point as _Point
 from src import get_altitude
 from src.angels import calculate_azimuth, calculate_elevation_angle, is_in_range
@@ -50,12 +51,68 @@ def create_casing(polyline, distance_meters: float):
 def filter_appropriate_points(flight, target_point, distance_in_m=CAMERA_MAX_DISTANCE):
     flight_indexes = set()
     for index, point in enumerate(flight):
-        distance = geodesic(target_point, point[:1][0]).meters
+        flat_distance = distance(target_point[:2], point[0][:2]).meters
+        euclidian_distance = math.sqrt(flat_distance**2 + (target_point[2] - 0) ** 2)
         THRESHOLD = 1500  # some const threshold, not sure if needed
-        if distance - THRESHOLD <= distance_in_m:
+        if euclidian_distance - THRESHOLD <= distance_in_m:
             flight_indexes.add(index)
 
     return flight_indexes
+
+
+def calc_access_for_demand1(flight: Flight, demand: Demand):
+    _, casing_intersection, _ = calculate_intersection_raw(flight.path_case, demand.polygon)
+
+    if not casing_intersection:
+        return
+
+    traveled_indexes = set()
+    coverage_result = {}  # the key is the index
+
+    for point in casing_intersection.exterior.coords:
+        point_with_alt = [*point, flight.height_meters]
+        indexes = filter_appropriate_points(
+            flight.path_with_time, point_with_alt, distance_in_m=flight.camera_capability_meters
+        )
+        for index in indexes:
+            if index in traveled_indexes:
+                continue
+            traveled_indexes.add(index)
+            relevant_flight_point = flight.path_with_time[index][0]
+            coverage_percent, intersection, leftover = get_intersection(relevant_flight_point, demand.polygon)
+            if not intersection:
+                continue
+            coverage_result[str(index)] = {
+                "coverage": {
+                    "coverage_percent": coverage_percent,
+                    "intersection": intersection,
+                    "leftover": leftover,
+                },
+            }
+
+    print(f"traveled indexes: {traveled_indexes}")
+    (
+        flight_path_who_has_cover,
+        ordered_indexes_coverage,
+        ordered_coverage_result,
+    ) = pre_process_coverage_result(flight.path_with_time, coverage_result)
+
+    print("asking api time")
+
+    start_time = time.time()
+    demand_centroid = get_demand_centroid(demand.polygon)
+    print("got alt of  demand  path in :--- %s seconds ---" % (time.time() - start_time))
+    angles_result = calculate_angels(demand_centroid, flight_path_who_has_cover)
+
+    accesses_result = build_accesses(
+        angles_result,
+        demand,
+        flight.path_with_time,
+        ordered_coverage_result,
+        ordered_indexes_coverage,
+    )
+
+    return accesses_result
 
 
 def calc_access_for_demand(flight_path, flight_path_with_casing, demand: Demand):

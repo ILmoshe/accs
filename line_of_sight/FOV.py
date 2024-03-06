@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from line_of_sight.sensor_position import calculate_rotated_points
 
@@ -112,7 +112,7 @@ FOCAL_POINT_XY_MM = lat_lon_to_mm(
 FOCAL_POINT_XYZ_MM = [
     FOCAL_POINT_XY_MM[1],
     FOCAL_POINT_XY_MM[0],
-    10000 * 1000,
+    5000 * 1000,
 ]  # lon is y and lat is x
 
 A_rotated, B_rotated, C_rotated, D_rotated = calculate_rotated_points(
