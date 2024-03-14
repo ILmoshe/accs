@@ -68,7 +68,7 @@ def get_max_camera_capability(fov_polygon, focal_point: list[float, float, float
     return curr_distance_in_meters
 
 
-def calculate_gsd_in_cm(sensor: Sensor, fov_polygon, focal_point):
+def calculate_gsd_in_cm(sensor: Sensor, fov_polygon: Polygon, focal_point: tuple[float]):
     center = Polygon(fov_polygon).centroid  # here maybe call to get elevation
     centroid = Point(lat=center.x, long=center.y)
     [centroid] = get_altitude([centroid])
@@ -78,6 +78,10 @@ def calculate_gsd_in_cm(sensor: Sensor, fov_polygon, focal_point):
     GSD = (euclidian_distance * sensor.width_mm) / (sensor.focal_length_mm * sensor.image_width_px)
     return GSD * 100
 
+from typing import Callable, Iterable
+
+def get_direction_vec(p1: Iterable, p2: Iterable) -> float:
+    pass
 
 class Flight(BaseModel):
     id: str = "flight_id"
@@ -88,6 +92,9 @@ class Flight(BaseModel):
     camera_elevation: float
     sensor: Sensor
 
+    direction: Callable[[tuple, tuple], float] = get_direction_vec
+
+    # Field which are added with computation
     camera_capability_meters: Optional[float] = None
     gsd: Optional[float] = None
     fov_polygon: Optional[list[list[float]]] = None
@@ -96,6 +103,10 @@ class Flight(BaseModel):
     def add_relevant_fields(self) -> Self:
         focal_point = [*self.path_with_time[0][0], self.height_meters]
         fov_polygon = get_fov_polygon(self.sensor, [self.camera_azimuth, self.camera_elevation], focal_point)
+
+        # Norm fields
+        self.camera_azimuth = self.camera_azimuth - (self.camera_azimuth * 2)
+        self.camera_elevation = self.camera_elevation - (self.camera_elevation * 2)
 
         self.gsd = calculate_gsd_in_cm(self.sensor, fov_polygon, focal_point)
         self.camera_capability_meters = get_max_camera_capability(fov_polygon, focal_point)
@@ -138,6 +149,7 @@ def read_hgt_file(filename):
     """
     Read elevation data from a .hgt file.
     """
+    print(f"hgt file name {filename}")
     with open(filename, "rb") as f:
         elevation_data = np.fromfile(f, np.dtype(">i2"), -1).reshape((3601, 3601))
     return elevation_data

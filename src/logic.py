@@ -72,14 +72,16 @@ def calc_access_for_demand1(flight: Flight, demand: Demand):
     for point in casing_intersection.exterior.coords:
         point_with_alt = [*point, flight.height_meters]
         indexes = filter_appropriate_points(
-            flight.path_with_time, point_with_alt, distance_in_m=flight.camera_capability_meters
+            flight.path_with_time, point_with_alt
         )
         for index in indexes:
             if index in traveled_indexes:
                 continue
             traveled_indexes.add(index)
             relevant_flight_point = flight.path_with_time[index][0]
-            coverage_percent, intersection, leftover = get_intersection(relevant_flight_point, demand.polygon)
+            coverage_percent, intersection, leftover = get_intersection(
+                relevant_flight_point, demand.polygon
+            )  # TODO: Change radius later
             if not intersection:
                 continue
             coverage_result[str(index)] = {
