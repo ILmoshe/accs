@@ -14,7 +14,7 @@ class UserModel(BaseModel):
         pw2 = self.password2
         self.bs = "my name is moshe"
         if pw1 is not None and pw2 is not None and pw1 != pw2:
-            raise ValueError    ("passwords do not match")
+            raise ValueError("passwords do not match")
         return self
 
 

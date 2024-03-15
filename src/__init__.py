@@ -1,6 +1,6 @@
 import math
 import os.path
-from typing import Any, NamedTuple, Optional, TypedDict
+from typing import Any, Callable, NamedTuple, Optional, TypedDict
 
 import numpy as np
 import requests
@@ -78,10 +78,6 @@ def calculate_gsd_in_cm(sensor: Sensor, fov_polygon: Polygon, focal_point: tuple
     GSD = (euclidian_distance * sensor.width_mm) / (sensor.focal_length_mm * sensor.image_width_px)
     return GSD * 100
 
-from typing import Callable, Iterable
-
-def get_direction_vec(p1: Iterable, p2: Iterable) -> float:
-    pass
 
 class Flight(BaseModel):
     id: str = "flight_id"
@@ -92,12 +88,20 @@ class Flight(BaseModel):
     camera_elevation: float
     sensor: Sensor
 
-    direction: Callable[[tuple, tuple], float] = get_direction_vec
-
     # Field which are added with computation
     camera_capability_meters: Optional[float] = None
     gsd: Optional[float] = None
     fov_polygon: Optional[list[list[float]]] = None
+
+    def get_relative_azimuth_to_flight_direction(self ,p1: tuple[float], p2: tuple[float]) -> float:
+        from src.angels import calculate_azimuth  # TODO: prevent circular imports
+
+        p1 = Point(lat=p1[0], long=p1[1])
+        p2 = Point(lat=p2[0], long=p2[1])
+        direction_azimuth = calculate_azimuth(p1, p2)
+        relative_azimuth = self.camera_azimuth - direction_azimuth
+        relative_azimuth %= 360
+        return relative_azimuth
 
     @model_validator(mode="after")
     def add_relevant_fields(self) -> Self:

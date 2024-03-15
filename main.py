@@ -94,8 +94,8 @@ flight1 = Flight(
     height_meters=5000,
     path_with_time=flight_path1,
     path_case=path_case1,
-    camera_azimuth=90,
-    camera_elevation=30,
+    camera_azimuth=0,
+    camera_elevation=90,
     sensor=sensor1,
 )
 print(flight1.camera_capability_meters)
@@ -228,12 +228,14 @@ for fl in [flight1]:
     add_accesses_to_flight_on_map(accesses, demands, fl.path_with_time)
 
 
+# just for visualization purpose
 for index, point in enumerate(flight1.path_with_time):
-    if index == 1:
+    if index + 1 == len(flight1.path_with_time):
         break
     focal_point = [*point[0], flight1.height_meters]
+    azimuth = flight1.get_relative_azimuth_to_flight_direction(flight1.path_with_time[index][0], flight1.path_with_time[index + 1][0])
     fov_polygon = get_fov_polygon(
-        flight1.sensor, [flight1.camera_azimuth, flight1.camera_elevation], focal_point
+        flight1.sensor, [azimuth, flight1.camera_elevation], focal_point
     )
     folium.Polygon(
         locations=fov_polygon,

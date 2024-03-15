@@ -71,9 +71,7 @@ def calc_access_for_demand1(flight: Flight, demand: Demand):
 
     for point in casing_intersection.exterior.coords:
         point_with_alt = [*point, flight.height_meters]
-        indexes = filter_appropriate_points(
-            flight.path_with_time, point_with_alt
-        )
+        indexes = filter_appropriate_points(flight.path_with_time, point_with_alt)
         for index in indexes:
             if index in traveled_indexes:
                 continue
