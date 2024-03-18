@@ -1,5 +1,3 @@
-from shapely.geometry import Polygon
-
 from .FOV import intersection_point, lat_lon_to_mm, mm_to_lat_lon
 from .sensor_position import calculate_rotated_points
 

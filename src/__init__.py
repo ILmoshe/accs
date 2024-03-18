@@ -1,6 +1,6 @@
 import math
 import os.path
-from typing import Any, Callable, NamedTuple, Optional, TypedDict
+from typing import Any, NamedTuple, Optional, TypedDict
 
 import numpy as np
 import requests
@@ -93,7 +93,7 @@ class Flight(BaseModel):
     gsd: Optional[float] = None
     fov_polygon: Optional[list[list[float]]] = None
 
-    def get_relative_azimuth_to_flight_direction(self ,p1: tuple[float], p2: tuple[float]) -> float:
+    def get_relative_azimuth_to_flight_direction(self, p1: tuple[float], p2: tuple[float]) -> float:
         from src.angels import calculate_azimuth  # TODO: prevent circular imports
 
         p1 = Point(lat=p1[0], long=p1[1])
