@@ -84,6 +84,7 @@ class Flight(BaseModel):
     height_meters: float
     path_with_time: list[tuple[Any, str]]
     path_case: list[list]
+    path: list[list]
     camera_azimuth: float
     camera_elevation: float
     sensor: Sensor
@@ -93,7 +94,9 @@ class Flight(BaseModel):
     gsd: Optional[float] = None
     fov_polygon: Optional[list[list[float]]] = None
 
-    def get_relative_azimuth_to_flight_direction(self, p1: tuple[float], p2: tuple[float]) -> float:
+    def get_relative_azimuth_to_flight_direction(
+        self, p1: tuple[float] | list, p2: tuple[float] | list
+    ) -> float:
         from src.angels import calculate_azimuth  # TODO: prevent circular imports
 
         p1 = Point(lat=p1[0], long=p1[1])

@@ -5,6 +5,8 @@ from geopy.distance import distance, geodesic
 from shapely.geometry import LineString, Point, Polygon
 
 from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
+from line_of_sight import get_fov_polygon
+from line_of_sight.create_polygon import calc_continues_fov
 from src import Demand, Flight
 from src import Point as _Point
 from src import get_altitude
@@ -14,6 +16,115 @@ from src.coverage import (
     calculate_intersection_raw,
     create_geodesic_circle,
 )
+
+
+# 1. Create Casing:
+def points_along_line(lat1, lon1, lat2, lon2, interval_distance):
+    """
+    Calculate points along the line connecting two points
+    at specified intervals.
+    """
+    # Calculate total distance between two points in meters
+    total_distance = geodesic((lat1, lon1), (lat2, lon2)).meters
+
+    # Calculate the number of segments
+    num_segments = int(total_distance / interval_distance)
+
+    # Calculate the fraction to divide the latitude and longitude differences by
+    lat_diff = lat2 - lat1
+    lon_diff = lon2 - lon1
+    lat_fraction = lat_diff / num_segments
+    lon_fraction = lon_diff / num_segments
+
+    # Generate points at specified intervals
+    points = ((lat1 + i * lat_fraction, lon1 + i * lon_fraction) for i in range(1, num_segments))
+
+    return points
+
+
+# 1. Create Casing:
+def create_case_for_flight_path(flight: Flight):
+    casing = []
+    for i in range(len(flight.path) - 1):
+        first_point = flight.path[i]
+        second_point = flight.path[i + 1]
+
+        azimuth = flight.get_relative_azimuth_to_flight_direction(first_point, second_point)
+        fov_polygon1 = get_fov_polygon(
+            flight.sensor, [azimuth, flight.camera_elevation], [*first_point, 5000]
+        )
+        fov_polygon2 = get_fov_polygon(
+            flight.sensor, [azimuth, flight.camera_elevation], [*second_point, 5000]
+        )
+
+        continues_fov = calc_continues_fov(fov_polygon1, fov_polygon2)
+        casing.append(
+            {"points": {str(i): first_point, str(i + i): second_point}, "case_polygon": continues_fov}
+        )
+
+    return casing
+
+
+# 2. for each case see if it intersects:
+def get_intersection_with_case(casing, demand: Demand):
+    intersects_with_case = []
+    for case in casing:
+        _, intersection, _ = calculate_intersection_raw(case["case_polygon"], demand.polygon)
+        if not intersection:
+            continue
+        intersects_with_case.append(case["points"])
+    return intersects_with_case
+
+
+# 3. for each intersection we found:
+def calculate_accesses_with_case_intersections(
+    intersects_with_case, flight: Flight, demand: Demand, resolution_in_meters=1000
+):
+    accesses_for_flight = []
+    for intersection_line in intersects_with_case:
+        point_A, point_B = list(intersection_line.values())
+        index_A, index_B = list(intersection_line.keys())
+
+        azimuth = flight.get_relative_azimuth_to_flight_direction(point_A, point_B)
+        points = points_along_line(point_A[0], point_A[1], point_B[0], point_B[1], resolution_in_meters)
+        accesses_for_line = calculate_accesses_along_points(points, flight, demand, azimuth)
+        accesses_for_flight.append({f"{index_A},{index_B}": accesses_for_line})
+
+        return accesses_for_flight
+
+
+def calculate_accesses_along_points(points, flight: Flight, demand: Demand, azimuth):
+    accesses = []
+    for index, point in enumerate(points):
+        fov_polygon = get_fov_polygon(
+            flight.sensor, [azimuth, flight.camera_elevation], [*point, flight.height_meters]
+        )
+        coverage_percent, intersection, leftover = calculate_intersection(fov_polygon, demand.polygon)
+        if not intersection:
+            continue
+
+        current_access = {
+            "coverage_percent": coverage_percent,
+            "intersection": intersection,
+            "leftover": leftover,
+        }
+        if (
+            not accesses or list(accesses[-1].keys())[-1] != index - 1
+        ):  # Is it a separate access, check it by looking at the last index
+            accesses.append({index: current_access})
+        else:  # The access is a continues from the last one
+            accesses[-1][index] = current_access
+
+        return accesses
+
+
+def calculate_accesses_for_demand(flight: Flight, demand: Demand):
+    base_case = create_case_for_flight_path(flight)
+    demand_intersection_with_case = get_intersection_with_case(base_case, demand)
+    accesses_for_demand = calculate_accesses_with_case_intersections(
+        demand_intersection_with_case, flight, demand, resolution_in_meters=1000
+    )
+    return accesses_for_demand
 
 
 def add_meters_to_coordinates(coordinates, distance_in_meters, azimuth_to_north: int = 90):

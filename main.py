@@ -87,6 +87,7 @@ flight_path1 = add_time(haifa_to_lebanon)
 sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300, image_width_px=12400)
 flight1 = Flight(
     height_meters=5000,
+    path=haifa_to_lebanon,
     path_with_time=flight_path1,
     path_case=path_case1,
     camera_azimuth=99,
@@ -221,7 +222,6 @@ for fl in [flight1]:
         accesses.append(result)
     print(f"got access of {len(demands)} demands path in :--- %s seconds ---" % (time.time() - start_time))
     add_accesses_to_flight_on_map(accesses, demands, fl.path_with_time)
-
 
 
 # just for visualization purpose
