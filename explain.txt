@@ -1,29 +1,5 @@
-Explanation of the project:
-
-Access calculation of airplanes, UAV's, drones and every air vehicle which have fixed path
-
-We are taking into account:
+Now we need to add option in a given fligth for change in the Elevtaion range, so when I am scanning - or creatingf the case to take into account the scan rate
 
 
--- NATURE --
-1. sun placement
-2. ground elevation
-
-
--- Demand --
-3. requested azimuth
-4. request elevation
-5. request relevance (including hours etc)
-6. requested area
-7. requested GSD (resolution)
-
--- instrument --
-8. camera capabilities (GSD, zoom etc)
-9. activity window of the camera (when we can actually take images)
-
-The instrument Aw will be represented as vector which contain objects which tell us:
-1. coordinates - LAT, LONG
-2. time
-3. event (can we actually take image at this time) - not sure if this is needed.
-
-
+1. CHange schema which will have a start elevation and end elevation to support recon mission
+2. Change it accordingly in the path case as well as the actual algorithem, do we need
