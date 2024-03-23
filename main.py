@@ -15,7 +15,13 @@ from line_of_sight import get_fov_polygon
 from line_of_sight.create_polygon import calc_continues_fov
 from src import Flight, Sensor
 from src.coverage import Demand
-from src.logic import binary_search, calc_access_for_demand1, create_casing
+from src.logic import (
+    binary_search,
+    calc_access_for_demand1,
+    create_casing,
+    get_origin_point_on_flight_path,
+    get_time_of_flight_path_point,
+)
 
 start_latitude = 32.7526326
 start_longitude = 35.0701214
@@ -223,7 +229,6 @@ for fl in [flight1]:
     add_accesses_to_flight_on_map(accesses, demands, fl.path_with_time)
 
 
-
 # just for visualization purpose
 for index, point in enumerate(flight1.path_with_time):
     if index + 1 == len(flight1.path_with_time):
@@ -273,6 +278,16 @@ for i in range(len(haifa_to_lebanon) - 1):
     fov_polygon2 = get_fov_polygon(flight1.sensor, [azimuth, flight1.camera_elevation], f2_point_with_height)
 
     continues_fov = calc_continues_fov(fov_polygon1, fov_polygon2)
+    intersection_points = Polygon(continues_fov).intersection(Polygon(demands[0].polygon)).exterior.coords
+    points_with_time = []
+    for point in intersection_points:
+        demand_intersection_on_fov = get_origin_point_on_flight_path(
+            point, 135, Polygon(continues_fov), flight_path1
+        )
+        speed = 600
+        points_with_time.append(
+            get_time_of_flight_path_point(point, speed, path_start=first_point, path_end=second_point)
+        )
     folium.Polygon(
         locations=continues_fov,
         weight=0.11,
