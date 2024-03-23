@@ -4,7 +4,7 @@ from math import asin, atan2, cos, degrees, radians, sin, sqrt
 from geopy.distance import geodesic
 from shapely.geometry import Polygon
 
-from . import Demand, Point, get_elevations
+from src import Demand, Point, get_elevations
 
 
 def calculate_azimuth(observer: Point, target: Point) -> float:

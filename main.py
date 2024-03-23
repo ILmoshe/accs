@@ -10,16 +10,17 @@ from shapely.geometry import Polygon
 from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
 from data import interpolate_polyline
 from data.polygon import *
-from data.polyline import circle, haifa_to_lebanon
+from data.polyline import haifa_to_lebanon
 from line_of_sight import get_fov_polygon
-from line_of_sight.FOV import intersections as camera_fov
+from line_of_sight.create_polygon import calc_continues_fov
 from src import Flight, Sensor
 from src.coverage import Demand
 from src.logic import (
     binary_search,
-    calc_access_for_demand,
     calc_access_for_demand1,
     create_casing,
+    get_origin_point_on_flight_path,
+    get_time_of_flight_path_point,
 )
 
 start_latitude = 32.7526326
@@ -81,21 +82,21 @@ Map = folium.Map(
 
 Draw(export=True).add_to(Map)
 
-total_time = 30 * 60  # 30 minutes in seconds
-interval = 20  # seconds
-result_polyline1 = interpolate_polyline(haifa_to_lebanon, total_time, interval)
-path_case1 = create_casing(result_polyline1, CAMERA_MAX_DISTANCE)
+# total_time = 30 * 60  # 30 minutes in seconds
+# interval = 20  # seconds
+# result_polyline1 = interpolate_polyline(haifa_to_lebanon, total_time, interval)
+path_case1 = create_casing(haifa_to_lebanon, CAMERA_MAX_DISTANCE)
 folium.PolyLine(haifa_to_lebanon, tooltip="Flight path").add_to(Map)
 folium.Polygon(locations=path_case1, color="blue").add_to(Map)
-flight_path1 = add_time(result_polyline1)
+flight_path1 = add_time(haifa_to_lebanon)
 
 sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300, image_width_px=12400)
 flight1 = Flight(
     height_meters=5000,
     path_with_time=flight_path1,
     path_case=path_case1,
-    camera_azimuth=90,
-    camera_elevation=30,
+    camera_azimuth=99,
+    camera_elevation=15,
     sensor=sensor1,
 )
 print(flight1.camera_capability_meters)
@@ -228,15 +229,67 @@ for fl in [flight1]:
     add_accesses_to_flight_on_map(accesses, demands, fl.path_with_time)
 
 
+# just for visualization purpose
 for index, point in enumerate(flight1.path_with_time):
-    if index == 1:
+    if index + 1 == len(flight1.path_with_time):
         break
     focal_point = [*point[0], flight1.height_meters]
-    fov_polygon = get_fov_polygon(
-        flight1.sensor, [flight1.camera_azimuth, flight1.camera_elevation], focal_point
+    azimuth = flight1.get_relative_azimuth_to_flight_direction(
+        flight1.path_with_time[index][0], flight1.path_with_time[index + 1][0]
     )
+    fov_polygon = get_fov_polygon(flight1.sensor, [azimuth, flight1.camera_elevation], focal_point)
+
+    # for index, (lat, long) in enumerate(fov_polygon):
+    #     kw = {
+    #         "prefix": "fa",
+    #         "color": "green",
+    #         "icon": "arrow-up",
+    #     }
+    #     icon_angle = 270
+    #     icon = folium.Icon(angle=icon_angle, **kw)
+    #     folium.Marker(
+    #         location=[lat, long],
+    #         icon=icon,
+    #         tooltip=str(index + 1),
+    #     ).add_to(Map)
+
     folium.Polygon(
         locations=fov_polygon,
+        weight=0.81,
+        fill_opacity=0.2,
+        tooltip="camera FOV",
+        fill=True,
+        color="red",
+    ).add_to(Map)
+
+print(f"GSD flight1: {flight1.gsd}")
+# print(f"GSD flight2: {flight2.gsd}")
+
+
+for i in range(len(haifa_to_lebanon) - 1):
+    first_point = haifa_to_lebanon[i]
+    second_point = haifa_to_lebanon[i + 1]
+
+    f1_point_with_height = [*first_point, 5000]
+    f2_point_with_height = [*second_point, 5000]
+
+    azimuth = flight1.get_relative_azimuth_to_flight_direction(first_point, second_point)
+    fov_polygon1 = get_fov_polygon(flight1.sensor, [azimuth, flight1.camera_elevation], f1_point_with_height)
+    fov_polygon2 = get_fov_polygon(flight1.sensor, [azimuth, flight1.camera_elevation], f2_point_with_height)
+
+    continues_fov = calc_continues_fov(fov_polygon1, fov_polygon2)
+    intersection_points = Polygon(continues_fov).intersection(Polygon(demands[0].polygon)).exterior.coords
+    points_with_time = []
+    for point in intersection_points:
+        demand_intersection_on_fov = get_origin_point_on_flight_path(
+            point, 135, Polygon(continues_fov), flight_path1
+        )
+        speed = 600
+        points_with_time.append(
+            get_time_of_flight_path_point(point, speed, path_start=first_point, path_end=second_point)
+        )
+    folium.Polygon(
+        locations=continues_fov,
         weight=0.11,
         fill_opacity=0.6,
         tooltip="camera FOV",
@@ -244,9 +297,6 @@ for index, point in enumerate(flight1.path_with_time):
         color="green",
     ).add_to(Map)
 
-print(f"GSD flight1: {flight1.gsd}")
-# print(f"GSD flight2: {flight2.gsd}")
-
-
+print("I AM HERE!!!")
 Map.save("flight_path_map.html")
 print("FINISHED")

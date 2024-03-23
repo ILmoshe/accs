@@ -71,9 +71,7 @@ def calc_access_for_demand1(flight: Flight, demand: Demand):
 
     for point in casing_intersection.exterior.coords:
         point_with_alt = [*point, flight.height_meters]
-        indexes = filter_appropriate_points(
-            flight.path_with_time, point_with_alt
-        )
+        indexes = filter_appropriate_points(flight.path_with_time, point_with_alt)
         for index in indexes:
             if index in traveled_indexes:
                 continue
@@ -271,3 +269,21 @@ def split_to_chunks(arr):
 def get_intersection(point, demand, radius=CAMERA_MAX_DISTANCE):
     point_radius = create_geodesic_circle(point[0], point[1], radius=radius)
     return calculate_intersection(point_radius, demand)
+
+
+def get_origin_point_on_flight_path(
+    point: tuple, azimuth_direction: float, scan_polygon: Polygon, flight_path: LineString
+) -> Point:
+    another_point = Point(
+        [point[0] + math.radians(azimuth_direction), point[1] + math.radians(azimuth_direction)]
+    )
+    point_line = LineString([point, another_point])
+    point_line.offset_curve(1000)
+    intersection_point_on_polygon_boundary = point_line.intersection(scan_polygon.boundary)
+    # Need to do the opposite of the action done when getting the FOV, so we can get the point on the original flight path.
+    point_on_flight_path = 1
+    return intersection_point_on_polygon_boundary
+
+
+def get_time_of_flight_path_point(point, speed, path_start, path_end) -> float:
+    pass
