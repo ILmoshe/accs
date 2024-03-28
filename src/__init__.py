@@ -1,5 +1,6 @@
 import math
 import os.path
+from collections import OrderedDict
 from typing import Any, NamedTuple, Optional, Sequence, TypedDict
 
 import numpy as np
@@ -26,7 +27,7 @@ def create_grid_polygons(polygon: Polygon | Any, cell_size: float):
         for y in np.arange(miny, maxy, cell_size):
             # Define the current cell as a polygon (box)
             cell = box(x, y, x + cell_size, y + cell_size)
-            # If the cell intersects the polygon, add it to the list
+
             if cell.intersects(polygon):
                 # Clip the cell to the input polygon (to handle partial overlaps)
                 clipped_cell: Polygon = cell.intersection(polygon)
@@ -50,7 +51,7 @@ class Demand(BaseModel):
     @model_validator(mode="after")
     def prepare_demand(self) -> Self:
         self.demand_inner_calculation = create_grid_polygons(
-            self.polygon, 0.01
+            self.polygon, 0.015
         )  # we will have to see which size is the appropriate cell size
         return self
 
@@ -141,29 +142,6 @@ class Flight(BaseModel):
         relative_azimuth %= 360
         return relative_azimuth
 
-    def get_gsd(self):
-        start_elevation, end_elevation = (
-            (self.camera_elevation_start, self.camera_elevation_end)
-            if self.camera_elevation_start <= self.camera_elevation_end
-            else (self.camera_elevation_end, self.camera_elevation_start)
-        )
-
-        fov_polygons = []
-        for elevation in range(start_elevation, end_elevation, 2):
-            fov_polygon = get_fov_polygon(
-                self.sensor, [self.camera_azimuth, elevation], [*self.path[0], self.height_meters]
-            )
-            fov_polygons.append({elevation: fov_polygon})
-
-        # sort, so values which are closer to the ZENITH=90
-        ZENITH = 90
-        sorted_fov_polygons = sorted(fov_polygons, key=lambda obj: abs(list(obj.keys())[0] - ZENITH))
-
-        """
-        The actual calculation will be:
-        1. measure each distaace 
-        """
-
     @model_validator(mode="after")
     def add_relevant_fields(self) -> Self:
         # Norm fields
@@ -210,9 +188,6 @@ def get_elevations(points: list[Point]):
             for data in points
         ]
         return result_points
-
-
-from collections import OrderedDict
 
 
 class LRUCache:

@@ -132,19 +132,4 @@ def calculate_rotated_points(W, H, FL, AZ, EL, focal_point):
     return A_rotated, B_rotated, C_rotated, D_rotated
 
 
-def intersection_point(point1, point2):
-    # Calculate the direction vector of the line passing through the two points
-    direction_vector = [point2[i] - point1[i] for i in range(3)]
-
-    # Find the parameter t when the line intersects the two-dimensional plane (z=0)
-    t = point1[2] / (point1[2] - point2[2])
-
-    # Calculate the coordinates of the intersection point
-    intersection_x = point1[0] + t * direction_vector[0]
-    intersection_y = point1[1] + t * direction_vector[1]
-    intersection_z = 0
-
-    return [intersection_x, intersection_y, intersection_z]
-
-
 # plot_rotated_rectangle([A_rotated, B_rotated, C_rotated, D_rotated])

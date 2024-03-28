@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from line_of_sight.sensor_position import calculate_rotated_points
 
-
-def intersection_point(point1, point2):
+def intersection_point(point1, point2) -> list[float]:
+    """
+    Calculating intersection with the plain when z=0
+    :param point1:
+    :param point2:
+    :return: The intersection point on the plain where z=0
+    """
     # Calculate the direction vector of the line passing through the two points
     direction_vector = [point2[i] - point1[i] for i in range(3)]
 
@@ -20,14 +24,6 @@ def intersection_point(point1, point2):
 
 
 def plot_surface(points, figsize=(8, 6)):
-    """
-    Plots the 3D polygon formed by the given points.
-
-    Args:
-        points: A list of four NumPy arrays representing the corner points of the rectangle.
-        figsize: Optional, a tuple specifying the figure size (width, height) in inches.
-    """
-
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
 
@@ -95,45 +91,46 @@ def mm_to_lat_lon(lat_offset, lon_offset, origin_lat, origin_lon):
     return latitude, longitude
 
 
-SENSOR_WIDTH_MM = 36
-SENSOR_HEIGHT_MM = 24
-FOCAL_LENGTH_MM = 500
-AZIMUTH = -80
-ELEVATION = -15
-
-FOCAL_POINT_XY = [32.931507, 34.926353]  # lat, lon
-REFERENCE_POINT = [32.835751, 34.606934]
-
-FOCAL_POINT_XY_MM = lat_lon_to_mm(
-    FOCAL_POINT_XY[0], FOCAL_POINT_XY[1], REFERENCE_POINT[0], REFERENCE_POINT[1]
-)
-
-
-FOCAL_POINT_XYZ_MM = [
-    FOCAL_POINT_XY_MM[1],
-    FOCAL_POINT_XY_MM[0],
-    5000 * 1000,
-]  # lon is y and lat is x
-
-A_rotated, B_rotated, C_rotated, D_rotated = calculate_rotated_points(
-    SENSOR_WIDTH_MM,
-    SENSOR_HEIGHT_MM,
-    FOCAL_LENGTH_MM,
-    AZIMUTH,
-    ELEVATION,
-    FOCAL_POINT_XYZ_MM,
-)
-
-intersections = []
-
-for point in [A_rotated, B_rotated, C_rotated, D_rotated]:
-    intersection = intersection_point(FOCAL_POINT_XYZ_MM, point)
-    interaction_lat_lon = mm_to_lat_lon(
-        intersection[1], intersection[0], REFERENCE_POINT[0], REFERENCE_POINT[1]
-    )
-    intersections.append([*interaction_lat_lon])  # add z latter
-
-print("Intersection points:", intersections)
+# Example usage for calc
+# SENSOR_WIDTH_MM = 36
+# SENSOR_HEIGHT_MM = 24
+# FOCAL_LENGTH_MM = 500
+# AZIMUTH = -80
+# ELEVATION = -15
+#
+# FOCAL_POINT_XY = [32.931507, 34.926353]  # lat, lon
+# REFERENCE_POINT = [32.835751, 34.606934]
+#
+# FOCAL_POINT_XY_MM = lat_lon_to_mm(
+#     FOCAL_POINT_XY[0], FOCAL_POINT_XY[1], REFERENCE_POINT[0], REFERENCE_POINT[1]
+# )
+#
+#
+# FOCAL_POINT_XYZ_MM = [
+#     FOCAL_POINT_XY_MM[1],
+#     FOCAL_POINT_XY_MM[0],
+#     5000 * 1000,
+# ]  # lon is y and lat is x
+#
+# A_rotated, B_rotated, C_rotated, D_rotated = calculate_rotated_points(
+#     SENSOR_WIDTH_MM,
+#     SENSOR_HEIGHT_MM,
+#     FOCAL_LENGTH_MM,
+#     AZIMUTH,
+#     ELEVATION,
+#     FOCAL_POINT_XYZ_MM,
+# )
+#
+# intersections = []
+#
+# for point in [A_rotated, B_rotated, C_rotated, D_rotated]:
+#     intersection = intersection_point(FOCAL_POINT_XYZ_MM, point)
+#     interaction_lat_lon = mm_to_lat_lon(
+#         intersection[1], intersection[0], REFERENCE_POINT[0], REFERENCE_POINT[1]
+#     )
+#     intersections.append([*interaction_lat_lon])  # add z latter
+#
+# print("Intersection points:", intersections)
 
 
 # plot_surface(intersections)

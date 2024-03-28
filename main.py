@@ -1,17 +1,23 @@
 import random
 import uuid
+from copy import deepcopy
 
 import arrow
+import branca
 import folium
-from folium.plugins import Draw, HeatMap
+from folium.plugins import Draw
 from shapely.geometry import Polygon
 
-from const import CAMERA_MAX_DISTANCE, INTERVAL_SAMPLE
+from const import INTERVAL_SAMPLE
 from data.polygon import *
 from data.polyline import circle, haifa_to_lebanon
-from src import Flight, Sensor
-from src.coverage import Demand
-from src.logic import calculate_arrival_time, create_casing
+from src import Demand, Flight, Sensor
+from src.logic import (
+    calculate_accesses_for_demand,
+    calculate_arrival_time,
+    create_case_for_flight_path,
+)
+from tryMe import generate_plots_base64_with_gsd_text
 
 start_latitude = 32.7526326
 start_longitude = 35.0701214
@@ -75,14 +81,14 @@ flight1 = Flight(
 demands = add_demands_to_map(
     demand_near_sea,
     # demand_not_near_sea,
-    # demand_in_middle,
+    demand_in_middle,
     # demand_huge_near_sea,
     # not_sure_demand,
     # fullone,
     # long_demand,
     near_haifa,
     # Even,
-    # Idan,
+    Idan,
 )
 
 
@@ -150,10 +156,6 @@ def draw_base_caseing_on_map(polygons, Map: folium.Map):
             color="green",
         ).add_to(Map)
 
-
-from copy import deepcopy
-
-from src.logic import calculate_accesses_for_demand, create_case_for_flight_path
 
 # def show_demand_detail(accesses):
 #     for access in accesses
@@ -248,9 +250,6 @@ def calculation(flights: list[Flight], demands: list[Demand]):
 flights = [flight1, flight2]
 res: dict[str, dict] = calculation(flights, demands)
 print("FINSHED CALCULATION")
-import branca
-
-from tryMe import generate_plots_base64_with_gsd_text
 
 
 def is_empty(los_gsd):
@@ -261,10 +260,10 @@ def is_empty(los_gsd):
 def show_demand_detail(res: dict, fligths):
     for index, demand in enumerate(demands, 1):
         html_parts = []
-        encoded_images = []
         has_access_for_demand: dict = res.get(demand.id, False)
         if has_access_for_demand:
             for flight in fligths:
+                encoded_images = []
                 has_accesses_for_flight: list = has_access_for_demand.get(flight.id, False)
                 if has_accesses_for_flight:
                     for access in has_accesses_for_flight:
@@ -287,7 +286,9 @@ def show_demand_detail(res: dict, fligths):
                 demand_centroid.y,
             ]
         folium.PolyLine(
-            locations=[demand_centroid, [demand_centroid[0] - index, demand_centroid[1] - index]]
+            locations=[demand_centroid, [demand_centroid[0] - index, demand_centroid[1] - index]],
+            color="white",
+            opacity=0.1,
         ).add_to(Map)
 
         html_content = "".join(html_parts)
