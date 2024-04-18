@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title>pydeck</title>
+        <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <script src='https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@~8.8.*/dist/index.js'></script>
+    <style>
+    body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#deck-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+#deck-container canvas {
+  z-index: 1;
+  background: none;
+}
+    </style>
+  </head>
+  <body>
+    <div id="deck-container">
+    </div>
+  </body>
+  <script>
+    const container = document.getElementById('deck-container');
+    const jsonInput = {
+  "initialViewState": {
+    "latitude": 32.7526326,
+    "longitude": 35.0701214,
+    "zoom": 10
+  },
+  "layers": [
+    {
+      "@@type": "PathLayer",
+      "data": [
+        {
+          "color": [
+            66,
+            12,
+            234
+          ],
+          "name": "haifa_to_lebanon",
+          "path": [
+            [
+              35.0701214,
+              32.7526326
+            ],
+            [
+              34.8873759,
+              32.7537875
+            ],
+            [
+              34.891498,
+              32.8622859
+            ],
+            [
+              34.9368409,
+              32.9522158
+            ],
+            [
+              34.995924,
+              33.0639242
+            ],
+            [
+              35.0563811,
+              33.1524991
+            ],
+            [
+              35.1003499,
+              33.2409847
+            ],
+            [
+              35.1223343,
+              33.2960993
+            ],
+            [
+              35.1456928,
+              33.3569146
+            ],
+            [
+              35.1731733,
+              33.4108096
+            ],
+            [
+              35.2061499,
+              33.4784176
+            ],
+            [
+              35.230407,
+              33.54025
+            ],
+            [
+              35.256506,
+              33.592575
+            ],
+            [
+              35.282606,
+              33.6089009
+            ],
+            [
+              35.307079,
+              33.636725
+            ],
+            [
+              35.331552,
+              33.664549
+            ],
+            [
+              35.3435525,
+              33.6729257
+            ]
+          ]
+        },
+        {
+          "color": [
+            135,
+            136,
+            201
+          ],
+          "name": "circle",
+          "path": [
+            [
+              35.575104,
+              33.154799
+            ],
+            [
+              35.314178,
+              33.265102
+            ],
+            [
+              35.186462,
+              33.294951
+            ],
+            [
+              35.046387,
+              33.325939
+            ],
+            [
+              34.870605,
+              33.319053
+            ],
+            [
+              34.789581,
+              33.277732
+            ],
+            [
+              34.70993,
+              33.183537
+            ],
+            [
+              34.641266,
+              33.054716
+            ],
+            [
+              34.600067,
+              32.936081
+            ],
+            [
+              34.536896,
+              32.774574
+            ],
+            [
+              34.580841,
+              32.647469
+            ],
+            [
+              34.70993,
+              32.560704
+            ],
+            [
+              34.881592,
+              32.596577
+            ],
+            [
+              35.028534,
+              32.635906
+            ],
+            [
+              35.15625,
+              32.728375
+            ],
+            [
+              35.190582,
+              32.836905
+            ]
+          ]
+        },
+        {
+          "color": [
+            10,
+            208,
+            23
+          ],
+          "name": "fl3",
+          "path": [
+            [
+              35.308619641962025,
+              33.039951701463494
+            ],
+            [
+              35.075627631533365,
+              33.03897570011843
+            ],
+            [
+              34.911759868934865,
+              33.00050746686469
+            ],
+            [
+              34.81671269988263,
+              32.960642063719106
+            ],
+            [
+              34.84784884146947,
+              32.89186635916532
+            ],
+            [
+              34.98386448969404,
+              32.89874643620493
+            ],
+            [
+              35.10675015207127,
+              32.95788874269189
+            ],
+            [
+              35.05924685539688,
+              33.121368083927706
+            ],
+            [
+              35.26803859334484,
+              33.11669878894244
+            ],
+            [
+              35.26481813302678,
+              33.08661004346904
+            ],
+            [
+              35.00352954940067,
+              33.073318397356076
+            ],
+            [
+              34.883901215937556,
+              33.023868470786226
+            ],
+            [
+              34.882262471642804,
+              32.78722497337661
+            ]
+          ]
+        }
+      ],
+      "getColor": "@@=color",
+      "getPath": "@@=path",
+      "getWidth": 6,
+      "id": "8c416e86-8d99-4999-9843-b161a7fd6823",
+      "pickable": true,
+      "widthMinPixels": 6,
+      "widthScale": 20
+    }
+  ],
+  "mapProvider": "carto",
+  "mapStyle": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  "views": [
+    {
+      "@@type": "MapView",
+      "controller": true
+    }
+  ]
+};
+    const tooltip = {'text': '{name}'};
+    const customLibraries = null;
+    const configuration = null;
+
+    const deckInstance = createDeck({
+                  container,
+      jsonInput,
+      tooltip,
+      customLibraries,
+      configuration
+    });
+
+  </script>
+</html>

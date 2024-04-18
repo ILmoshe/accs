@@ -1,101 +1,13 @@
-import uuid
 from copy import deepcopy
 
-import branca
 import folium
-from folium.plugins import Draw
-from shapely.geometry import Polygon
 
-from data.polygon import *
-from data.polyline import *
-from src import Demand, Flight, Sensor
+from main import Map
+from src import Flight, Demand
 from src.logic import (
     calculate_accesses_for_demand,
-    calculate_arrival_time,
     create_case_for_flight_path,
-)
-from tryMe import generate_plots_base64_with_gsd_text
-
-start_latitude = 32.7526326
-start_longitude = 35.0701214
-
-
-def add_demand(demand: Demand):
-    folium.Polygon(demand.polygon, tooltip=demand.id, color="red", weight=1).add_to(Map)
-
-    return demand
-
-
-def add_demands_to_map(*demands: list[list[float, float]]):
-    return [add_demand(Demand(id=str(uuid.uuid4()).split("-")[0], polygon=demand)) for demand in demands]
-
-
-Map = folium.Map(
-    location=[start_latitude, start_longitude],
-    zoom_start=11,
-    tiles="Cartodb dark_matter",
-)
-
-Draw(export=True).add_to(Map)
-
-
-folium.PolyLine(haifa_to_lebanon, tooltip="Flight path").add_to(Map)
-
-
-sensor1 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300, image_width_px=12400)
-flight1 = Flight(
-    id="first",
-    height_meters=10000,
-    speed_km_h=500.0,
-    path=haifa_to_lebanon,
-    path_case=haifa_to_lebanon,
-    camera_azimuth=70,
-    camera_elevation_start=90,
-    camera_elevation_end=30,
-    sensor=sensor1,
-)
-
-
-demands = add_demands_to_map(
-    demand_near_sea,
-    # demand_not_near_sea,
-    demand_in_middle,
-    # demand_huge_near_sea,
-    # not_sure_demand,
-    # fullone,
-    # long_demand,
-    near_haifa,
-    # Even,
-    Idan,
-)
-
-
-folium.PolyLine(circle, tooltip="Flight path").add_to(Map)
-sensor2 = Sensor(width_mm=36, height_mm=24, focal_length_mm=300, image_width_px=10_000)
-flight2 = Flight(
-    id="second",
-    height_meters=3000,
-    path=circle,
-    path_case=circle,
-    camera_elevation_start=110,
-    camera_elevation_end=170,
-    camera_azimuth=120,
-    sensor=sensor2,
-    speed_km_h=1000,
-)
-
-folium.PolyLine(fl3, tooltip="Flight path", color="yellow").add_to(Map)
-sensor2 = Sensor(width_mm=69, height_mm=54, focal_length_mm=300, image_width_px=14_000)
-flight3 = Flight(
-    id="third",
-    height_meters=5000,
-    path=fl3,
-    path_case=fl3,
-    camera_elevation_start=80,
-    camera_elevation_end=100,
-    camera_azimuth=1,
-    sensor=sensor2,
-    speed_km_h=1000,
+    calculate_arrival_time,
 )
 
 
@@ -194,60 +106,3 @@ def calculation(flights: list[Flight], demands: list[Demand]):
                                 **kwargs,
                             ).add_to(Map)
     return accesses_for_demands
-
-
-flights = [flight1, flight2, flight3]
-res = calculation(flights, demands)
-print("FINSHED CALCULATION")
-
-
-def is_empty(los_gsd):
-    values = los_gsd.values()
-    return all(value["GSD"] == float("inf") for value in values)
-
-
-def show_demand_detail(res: dict, fligths):
-    for index, demand in enumerate(demands, 1):
-        html_parts = []
-        has_access_for_demand: dict = res.get(demand.id, False)
-        if has_access_for_demand:
-            for flight in fligths:
-                encoded_images = []
-                has_accesses_for_flight: list = has_access_for_demand.get(flight.id, False)
-                if has_accesses_for_flight:
-                    for access in has_accesses_for_flight:
-                        los_gsd_obj = access["LOS_GSD"]
-                        if is_empty(los_gsd_obj):
-                            continue
-                        base64_plots = generate_plots_base64_with_gsd_text(los_gsd_obj)
-                        encoded_images.append(base64_plots)
-
-                for i, encoded_image in enumerate(encoded_images, start=1):
-                    html_parts.append(f"<h2>Demand:{demand.id} flight:{flight.id}</h2>")
-                    image_src = f"data:image/png;base64,{encoded_image}"
-                    html_parts.append(f'<img src="{image_src}" width="300" height="300"><br>')
-
-        demand_centroid = Polygon(demand.polygon).centroid
-        if demand_centroid:
-            demand_centroid = [
-                demand_centroid.x,
-                demand_centroid.y,
-            ]
-        folium.PolyLine(
-            locations=[
-                demand_centroid,
-                [demand_centroid[0] - index, demand_centroid[1] - index],
-            ],
-            color="white",
-            opacity=0.1,
-        ).add_to(Map)
-
-        html_content = "".join(html_parts)
-        iframe = branca.element.IFrame(html=html_content, width=800, height=800)
-        popup = folium.Popup(iframe, max_width=800)
-        folium.Marker([demand_centroid[0] - index, demand_centroid[1] - index], popup=popup).add_to(Map)
-
-
-show_demand_detail(res, flights)
-Map.save("flight_path_map.html")
-print("FINISHED")

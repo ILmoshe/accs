@@ -21,8 +21,6 @@ def create_grid_polygons(polygon: Polygon | Any, cell_size: float):
     minx, miny, maxx, maxy = polygon.bounds
     grid_polygons = {}
 
-    print(len(np.arange(minx, maxx, cell_size)))
-    print(len(np.arange(miny, maxy, cell_size)))
     for x in np.arange(minx, maxx, cell_size):
         for y in np.arange(miny, maxy, cell_size):
             # Define the current cell as a polygon (box)
@@ -34,8 +32,16 @@ def create_grid_polygons(polygon: Polygon | Any, cell_size: float):
                 lat = clipped_cell.centroid.x
                 long = clipped_cell.centroid.y
                 [point_with_alt] = get_altitude([Point(lat, long)])
-                p_x, p_y, p_z = (point_with_alt.lat, point_with_alt.long, point_with_alt.alt)
-                grid_polygons[p_x, p_y, p_z] = {"area": clipped_cell, "GSD": float("inf"), "LOS": False}
+                p_x, p_y, p_z = (
+                    point_with_alt.lat,
+                    point_with_alt.long,
+                    point_with_alt.alt,
+                )
+                grid_polygons[p_x, p_y, p_z] = {
+                    "area": clipped_cell,
+                    "GSD": float("inf"),
+                    "LOS": False,
+                }
 
     return grid_polygons
 

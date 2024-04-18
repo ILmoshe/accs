@@ -66,7 +66,11 @@ def put_LOS_into_demand(demand: Demand, point_with_alt: list[float], related_cen
             continue
 
         points_on_line = points_along_line(
-            point_with_alt[0], point_with_alt[1], related_centroid[0], related_centroid[1], 200
+            point_with_alt[0],
+            point_with_alt[1],
+            related_centroid[0],
+            related_centroid[1],
+            350,
         )
         len_points_on_line = len(points_on_line)
         for index, point in enumerate(points_on_line, 1):
@@ -158,7 +162,8 @@ def points_along_line(lat1, lon1, lat2, lon2, interval_distance):
 
     # Generate points at specified intervals
     points = [(lat1 + i * lat_fraction, lon1 + i * lon_fraction) for i in range(num_segments)]
-
+    points.insert(0, (lat1, lon1))
+    points.insert(len(points) - 1, (lat2, lon2))
     return points
 
 
@@ -170,22 +175,33 @@ def create_case_for_flight_path(flight: Flight):
 
         azimuth = flight.get_relative_azimuth_to_flight_direction(first_point, second_point)
         fov_polygon1 = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_start], [*first_point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_start],
+            [*first_point, flight.height_meters],
         )
         fov_polygon2 = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_start], [*second_point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_start],
+            [*second_point, flight.height_meters],
         )
 
         fov_polygon3 = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_end], [*first_point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_end],
+            [*first_point, flight.height_meters],
         )
         fov_polygon4 = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_end], [*second_point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_end],
+            [*second_point, flight.height_meters],
         )
 
         continues_fov = calc_continues_fov([fov_polygon1, fov_polygon2, fov_polygon3, fov_polygon4])
         casing.append(
-            {"points": {f"{i}": first_point, f"{i + 1}": second_point}, "case_polygon": continues_fov}
+            {
+                "points": {f"{i}": first_point, f"{i + 1}": second_point},
+                "case_polygon": continues_fov,
+            }
         )
 
     return casing
@@ -234,10 +250,14 @@ def calculate_accesses_along_points(
     demand_gsd_and_los_init_val = deepcopy(demand.demand_inner_calculation)
     for index, point in enumerate(points):
         fov_polygon_start_elevation = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_start], [*point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_start],
+            [*point, flight.height_meters],
         )
         fov_polygon_end_elevation = get_fov_polygon(
-            flight.sensor, [azimuth, flight.camera_elevation_end], [*point, flight.height_meters]
+            flight.sensor,
+            [azimuth, flight.camera_elevation_end],
+            [*point, flight.height_meters],
         )
         continues_fov = calc_continues_fov([fov_polygon_start_elevation, fov_polygon_end_elevation])
 
@@ -247,7 +267,7 @@ def calculate_accesses_along_points(
 
         related_centroids = get_intersectioncentroids(demand, intersection)
         put_best_GSD_into_demand(demand, flight, [*point, flight.height_meters], related_centroids)
-        put_LOS_into_demand(demand, [*point, flight.height_meters], related_centroids)
+        # put_LOS_into_demand(demand, [*point, flight.height_meters], related_centroids)
 
         current_access = {
             "point": point,
