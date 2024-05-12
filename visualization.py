@@ -3,11 +3,11 @@ from copy import deepcopy
 import folium
 
 from main import Map
-from src import Flight, Demand
+from src import Demand, Flight
 from src.logic import (
     calculate_accesses_for_demand,
-    create_case_for_flight_path,
     calculate_arrival_time,
+    create_case_for_flight_path,
 )
 
 

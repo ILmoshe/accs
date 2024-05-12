@@ -28,7 +28,6 @@ def get_z_value_from_line(p1, p2, x, y):
         p2 (array_like): The second point (x2, y2, z2) defining the line.
         x (float): The x value for which to find the corresponding z value.
         y (float): The y value for which to find the corresponding z value.
-
     Returns:
         float: The z value corresponding to the given x and y on the line.
     """
