@@ -5,14 +5,14 @@ from copy import deepcopy
 
 import aio_pika
 import asyncpg
-from shapely import GeometryCollection, LineString, Polygon, convex_hull
+from shapely import LineString, Polygon
 
 from src import Flight, Sensor
 from src.logic import create_case_for_flight_path
 
 
 async def insert_sensor(conn, sensor_data):
-    # Check if sensor already exists
+    # Check if the sensor already exists
     existing_sensor = await conn.fetchrow("SELECT id FROM sensor WHERE id = $1", sensor_data["name"])
     if existing_sensor is None:
         # Insert the new sensor
@@ -159,9 +159,10 @@ async def main() -> None:
     connection = await aio_pika.connect_robust(
         "amqps://nblmrhlt:LUkkf6MfMJ_W_TRaHU_CgEbm51QSiJfU@cow.rmq2.cloudamqp.com/nblmrhlt",
     )
-    queue_name = "constructRoute"
+    queue_constructRoute = "constructRoute"
+    queue_fov_result = "fovResponse"
     conn_pool = await asyncpg.create_pool(
-        user="postgres", password="changeme", database="accs", host="127.0.0.1"
+        user="postgres", password="changeme", database="accs", host="34.165.254.33"
     )
     await create_tables(conn_pool)
 
@@ -169,10 +170,12 @@ async def main() -> None:
     exchange = await channel.declare_exchange(
         "myExchange", type=aio_pika.exchange.ExchangeType.DIRECT, durable=True
     )
-    await channel.set_qos(prefetch_count=1)
-    queue = await channel.declare_queue(queue_name, durable=True)
-
-    await queue.consume(process_FOV_warper(conn_pool, exchange))
+    await channel.set_qos(prefetch_count=10)
+    fov_result_queue =  await channel.declare_queue(queue_fov_result, durable=True)
+    constructFov_queue = await channel.declare_queue(queue_constructRoute, durable=True)
+    await fov_result_queue.bind("myExchange")
+    await constructFov_queue.bind("myExchange")
+    await constructFov_queue.consume(process_FOV_warper(conn_pool, exchange))
 
     try:
         # Wait until terminate
