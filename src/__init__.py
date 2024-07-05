@@ -6,6 +6,7 @@ from typing import Any, NamedTuple, Optional, Sequence, TypedDict
 import numpy as np
 import requests
 from geopy import distance
+from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 from shapely.geometry import Polygon, box
 from typing_extensions import Self
@@ -217,7 +218,7 @@ class LRUCache:
 
 
 def read_hgt_file(filename):
-    print(f"hgt file name {filename}")
+    logger.info(f"hgt file name {filename}")
     with open(filename, "rb") as f:
         elevation_data = np.fromfile(f, np.dtype(">i2"), -1).reshape((3601, 3601))
     return elevation_data

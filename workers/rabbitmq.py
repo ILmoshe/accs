@@ -147,7 +147,7 @@ def process_FOV_warper(conn: asyncpg.Connection, rubbish: aio_pika.abc.AbstractE
 
                 await message.ack()
 
-            except BaseException as e:
+            except BaseException:
                 await message.nack()
 
             await asyncio.sleep(1)
@@ -171,7 +171,7 @@ async def main() -> None:
         "myExchange", type=aio_pika.exchange.ExchangeType.DIRECT, durable=True
     )
     await channel.set_qos(prefetch_count=10)
-    fov_result_queue =  await channel.declare_queue(queue_fov_result, durable=True)
+    fov_result_queue = await channel.declare_queue(queue_fov_result, durable=True)
     constructFov_queue = await channel.declare_queue(queue_constructRoute, durable=True)
     await fov_result_queue.bind("myExchange")
     await constructFov_queue.bind("myExchange")

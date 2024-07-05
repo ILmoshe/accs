@@ -266,7 +266,7 @@ def calculate_accesses_along_points(
 
         related_centroids = get_intersectioncentroids(demand, intersection)
         put_best_GSD_into_demand(demand, flight, [*point, flight.height_meters], related_centroids)
-        # put_LOS_into_demand(demand, [*point, flight.height_meters], related_centroids)
+        put_LOS_into_demand(demand, [*point, flight.height_meters], related_centroids)
 
         current_access = {
             "point": point,
