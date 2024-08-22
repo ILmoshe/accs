@@ -18,7 +18,11 @@ def generate_plots_base64_with_gsd_text(data):
     # Extract finite GSD values for color mapping
     finite_gsd_values = [val["GSD"] for val in data.values() if val["GSD"] != np.inf]
     # Set gsd_min and gsd_max based on the finite values or use default values if the list is empty
-    gsd_min, gsd_max = (min(finite_gsd_values), max(finite_gsd_values)) if finite_gsd_values else (0, 1)
+    gsd_min, gsd_max = (
+        (min(finite_gsd_values), max(finite_gsd_values))
+        if finite_gsd_values
+        else (0, 1)
+    )
 
     patches_gsd = []
     patches_los = []
@@ -34,11 +38,17 @@ def generate_plots_base64_with_gsd_text(data):
         patches_los.append(mpl_poly)
         colors_los.append("green" if value["LOS"] else "red")
         # Color mapping for GSD values
-        gsd_colors.append(gsd_to_color(value["GSD"], gsd_min, gsd_max) if finite_gsd_values else "grey")
+        gsd_colors.append(
+            gsd_to_color(value["GSD"], gsd_min, gsd_max)
+            if finite_gsd_values
+            else "grey"
+        )
         # GSD text
         gsd_text = f"{value['GSD']:.2f}" if value["GSD"] != np.inf else "-1"
         centroid = polygon.centroid.coords[0]
-        axes[0].text(centroid[0], centroid[1], gsd_text, ha="center", va="center", fontsize=8)
+        axes[0].text(
+            centroid[0], centroid[1], gsd_text, ha="center", va="center", fontsize=8
+        )
 
     p_gsd = PatchCollection(patches_gsd, alpha=0.4, color=gsd_colors, edgecolor="black")
     axes[0].add_collection(p_gsd)

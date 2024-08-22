@@ -38,7 +38,9 @@ def calculate_intersection(circle_polygon, demand_polygon):
     )
 
 
-def calculate_intersection_raw(circle_polygon, demand_polygon) -> tuple[float, Polygon, Polygon]:
+def calculate_intersection_raw(
+    circle_polygon, demand_polygon
+) -> tuple[float, Polygon, Polygon]:
     demand_polygon = Polygon(demand_polygon)
     circle_polygon = Polygon(circle_polygon)
 

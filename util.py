@@ -22,7 +22,10 @@ def add_demand(demand: Demand):
 
 
 def add_demands_to_map(*demands: list[list[float, float]]):
-    return [add_demand(Demand(id=str(uuid.uuid4()).split("-")[0], polygon=demand)) for demand in demands]
+    return [
+        add_demand(Demand(id=str(uuid.uuid4()).split("-")[0], polygon=demand))
+        for demand in demands
+    ]
 
 
 def show_demand_detail(res: dict, fligths, demands):
@@ -32,7 +35,9 @@ def show_demand_detail(res: dict, fligths, demands):
         if has_access_for_demand:
             for flight in fligths:
                 encoded_images = []
-                has_accesses_for_flight: list = has_access_for_demand.get(flight.id, False)
+                has_accesses_for_flight: list = has_access_for_demand.get(
+                    flight.id, False
+                )
                 if has_accesses_for_flight:
                     for access in has_accesses_for_flight:
                         los_gsd_obj = access["LOS_GSD"]
@@ -44,7 +49,9 @@ def show_demand_detail(res: dict, fligths, demands):
                 for i, encoded_image in enumerate(encoded_images, start=1):
                     html_parts.append(f"<h2>Demand:{demand.id} flight:{flight.id}</h2>")
                     image_src = f"data:image/png;base64,{encoded_image}"
-                    html_parts.append(f'<img src="{image_src}" width="300" height="300"><br>')
+                    html_parts.append(
+                        f'<img src="{image_src}" width="300" height="300"><br>'
+                    )
 
         demand_centroid = Polygon(demand.polygon).centroid
         if demand_centroid:
@@ -64,7 +71,9 @@ def show_demand_detail(res: dict, fligths, demands):
         html_content = "".join(html_parts)
         iframe = branca.element.IFrame(html=html_content, width=800, height=800)
         popup = folium.Popup(iframe, max_width=800)
-        folium.Marker([demand_centroid[0] - index, demand_centroid[1] - index], popup=popup).add_to(Map)
+        folium.Marker(
+            [demand_centroid[0] - index, demand_centroid[1] - index], popup=popup
+        ).add_to(Map)
 
 
 def draw_base_caseing_on_map(polygons, Map: folium.Map):
@@ -109,10 +118,14 @@ def calculation(flights: list[Flight], demands: list[Demand]):
                             intersection = access_point["intersection"]
 
                             if index == 0:  # first access
-                                start_time_access = calculate_arrival_time(flight, start_time_iso, point)
+                                start_time_access = calculate_arrival_time(
+                                    flight, start_time_iso, point
+                                )
 
                             if index == len(list(access.values())) - 1:  # last access
-                                end_time_access = calculate_arrival_time(flight, start_time_iso, point)
+                                end_time_access = calculate_arrival_time(
+                                    flight, start_time_iso, point
+                                )
 
                                 html = """
                                     <h1>Access</h1><br>
@@ -120,7 +133,9 @@ def calculation(flights: list[Flight], demands: list[Demand]):
                                     """
 
                                 style = "<br/>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <br/>"
-                                access_start = f"{style}<li>Start: {str(start_time_access)}<br/>"
+                                access_start = (
+                                    f"{style}<li>Start: {str(start_time_access)}<br/>"
+                                )
                                 access_end = f"<li>end: {str(end_time_access)}<br/>"
                                 html += access_start + access_end
 
@@ -141,7 +156,9 @@ def calculation(flights: list[Flight], demands: list[Demand]):
 
                             kwargs = {"color": "red"}
                             intersection_centroid = Polygon(intersection).centroid
-                            if intersection_centroid:  # TODO: take a deep look when this shit happens
+                            if (
+                                intersection_centroid
+                            ):  # TODO: take a deep look when this shit happens
                                 intersection_centroid = [
                                     intersection_centroid.x,
                                     intersection_centroid.y,

@@ -13,7 +13,9 @@ from src.logic import create_case_for_flight_path
 
 async def insert_sensor(conn, sensor_data):
     # Check if the sensor already exists
-    existing_sensor = await conn.fetchrow("SELECT id FROM sensor WHERE id = $1", sensor_data["name"])
+    existing_sensor = await conn.fetchrow(
+        "SELECT id FROM sensor WHERE id = $1", sensor_data["name"]
+    )
     if existing_sensor is None:
         # Insert the new sensor
         await conn.execute(
@@ -110,7 +112,9 @@ async def update_fov_with_flight(
     )
 
 
-def process_FOV_warper(conn: asyncpg.Connection, rubbish: aio_pika.abc.AbstractExchange):
+def process_FOV_warper(
+    conn: asyncpg.Connection, rubbish: aio_pika.abc.AbstractExchange
+):
     async def process_FOV(
         message: aio_pika.abc.AbstractIncomingMessage,
     ) -> None:
@@ -118,7 +122,9 @@ def process_FOV_warper(conn: asyncpg.Connection, rubbish: aio_pika.abc.AbstractE
             try:
                 msg = json.loads(message.body.decode())
                 flight_params = msg["flight"]
-                coords = deepcopy(flight_params["path"]["feature"]["geometry"]["coordinates"])
+                coords = deepcopy(
+                    flight_params["path"]["feature"]["geometry"]["coordinates"]
+                )
                 flight_params["path"] = coords
 
                 sensor = Sensor(**msg["sensor"])

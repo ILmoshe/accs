@@ -1,4 +1,5 @@
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 
 import numpy as np
@@ -39,7 +40,9 @@ def get_z_value_from_line(p1, p2, x, y):
 
     # Handle cases where the line is parallel to one of the axes
     if d[0] == 0 and d[1] == 0:
-        raise ValueError("The line is parallel to the z-axis; x and y values must match p1 or p2.")
+        raise ValueError(
+            "The line is parallel to the z-axis; x and y values must match p1 or p2."
+        )
 
     # Calculate parameter t
     t = np.where(d[0] != 0, (x - p1[0]) / d[0], (y - p1[1]) / d[1])
@@ -59,30 +62,54 @@ def put_best_GSD_into_demand(
             demand.demand_inner_calculation[related_centroid]["GSD"] = gsd
 
 
-def put_LOS_into_demand(demand: Demand, point_with_alt: list[float], related_centroids: list) -> None:
-    for related_centroid in related_centroids:
-        if demand.demand_inner_calculation[related_centroid]["LOS"]:  # We already have LOS there
-            continue
+def calculate_los_for_centroid(demand, point_with_alt, related_centroid):
+    if demand.demand_inner_calculation[related_centroid]["LOS"]:
+        return related_centroid, True
 
-        points_on_line = points_along_line(
-            point_with_alt[0],
-            point_with_alt[1],
-            related_centroid[0],
-            related_centroid[1],
-            350,
-        )
-        len_points_on_line = len(points_on_line)
-        for index, point in enumerate(points_on_line, 1):
-            equation_alt = get_z_value_from_line(point_with_alt, related_centroid, point[0], point[1])
-            [real_point] = get_altitude([point])
-            if real_point[2] > equation_alt:  # We don't have line of sight !
-                break  # leave current centroid, unfortunately we didn't find
+    points_on_line = points_along_line(
+        point_with_alt[0],
+        point_with_alt[1],
+        related_centroid[0],
+        related_centroid[1],
+        350,
+    )
+    len_points_on_line = len(points_on_line)
+    points_array = np.array(points_on_line)
 
-            if index == len_points_on_line:  # We checked all the way and we have LOS
+    equation_alts = np.apply_along_axis(
+        lambda point: get_z_value_from_line(
+            point_with_alt, related_centroid, point[0], point[1]
+        ),
+        1,
+        points_array,
+    )
+
+    real_points = get_altitude(points_on_line)
+    real_alts = np.array([point[2] for point in real_points])
+
+    if np.any(real_alts >= equation_alts):
+        return related_centroid, False
+
+    return related_centroid, True
+
+
+def put_LOS_into_demand(demand, point_with_alt, related_centroids):
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                calculate_los_for_centroid, demand, point_with_alt, centroid
+            )
+            for centroid in related_centroids
+        ]
+        for future in futures:
+            related_centroid, los_status = future.result()
+            if los_status:
                 demand.demand_inner_calculation[related_centroid]["LOS"] = True
 
 
-def calculate_arrival_time(flight: Flight, start_time_iso, target_point, margin_of_error=5):
+def calculate_arrival_time(
+    flight: Flight, start_time_iso, target_point, margin_of_error=5
+):
     """
     Calculates the estimated arrival time at a specific point on a flight route.
 
@@ -132,9 +159,9 @@ def distance_to_segment(point, p1, p2):
     Calculates the distance from a point to a line segment.
     """
 
-    u = ((point[0] - p1[0]) * (p2[0] - p1[0]) + (point[1] - p1[1]) * (p2[1] - p1[1])) / (
-        (p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2
-    )
+    u = (
+        (point[0] - p1[0]) * (p2[0] - p1[0]) + (point[1] - p1[1]) * (p2[1] - p1[1])
+    ) / ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
     if u < 0 or u > 1:
         return min(geodesic(point, p1).km, geodesic(point, p2).km)
     x = p1[0] + u * (p2[0] - p1[0])
@@ -160,7 +187,9 @@ def points_along_line(lat1, lon1, lat2, lon2, interval_distance):
     lon_fraction = lon_diff / num_segments
 
     # Generate points at specified intervals
-    points = [(lat1 + i * lat_fraction, lon1 + i * lon_fraction) for i in range(num_segments)]
+    points = [
+        (lat1 + i * lat_fraction, lon1 + i * lon_fraction) for i in range(num_segments)
+    ]
     points.insert(0, (lat1, lon1))
     points.insert(len(points) - 1, (lat2, lon2))
     return points
@@ -172,7 +201,9 @@ def create_case_for_flight_path(flight: Flight):
         first_point = flight.path[i]
         second_point = flight.path[i + 1]
 
-        azimuth = flight.get_relative_azimuth_to_flight_direction(first_point, second_point)
+        azimuth = flight.get_relative_azimuth_to_flight_direction(
+            first_point, second_point
+        )
         fov_polygon1 = get_fov_polygon(
             flight.sensor,
             [azimuth, flight.camera_elevation_start],
@@ -195,7 +226,9 @@ def create_case_for_flight_path(flight: Flight):
             [*second_point, flight.height_meters],
         )
 
-        continues_fov = calc_continues_fov([fov_polygon1, fov_polygon2, fov_polygon3, fov_polygon4])
+        continues_fov = calc_continues_fov(
+            [fov_polygon1, fov_polygon2, fov_polygon3, fov_polygon4]
+        )
         casing.append(
             {
                 "points": {f"{i}": first_point, f"{i + 1}": second_point},
@@ -209,7 +242,9 @@ def create_case_for_flight_path(flight: Flight):
 def get_intersection_with_case(casing, demand: Demand):
     intersects_with_case = []
     for case in casing:
-        _, intersection, _ = calculate_intersection_raw(case["case_polygon"], demand.polygon)
+        _, intersection, _ = calculate_intersection_raw(
+            case["case_polygon"], demand.polygon
+        )
         if not intersection:
             continue
         intersects_with_case.append(case["points"])
@@ -228,8 +263,12 @@ def calculate_accesses_with_case_intersections(
         index_A, index_B = list(intersection_line.keys())
 
         azimuth = flight.get_relative_azimuth_to_flight_direction(point_A, point_B)
-        points = points_along_line(point_A[0], point_A[1], point_B[0], point_B[1], resolution_in_meters)
-        accesses_for_line, LOS_GSD = calculate_accesses_along_points(points, flight, demand, azimuth)
+        points = points_along_line(
+            point_A[0], point_A[1], point_B[0], point_B[1], resolution_in_meters
+        )
+        accesses_for_line, LOS_GSD = calculate_accesses_along_points(
+            points, flight, demand, azimuth
+        )
         accesses_for_flight.append(
             {
                 f"{index_A},{index_B}": accesses_for_line,
@@ -247,6 +286,7 @@ def calculate_accesses_along_points(
 ):
     accesses = []
     demand_gsd_and_los_init_val = deepcopy(demand.demand_inner_calculation)
+
     for index, point in enumerate(points):
         fov_polygon_start_elevation = get_fov_polygon(
             flight.sensor,
@@ -258,14 +298,20 @@ def calculate_accesses_along_points(
             [azimuth, flight.camera_elevation_end],
             [*point, flight.height_meters],
         )
-        continues_fov = calc_continues_fov([fov_polygon_start_elevation, fov_polygon_end_elevation])
+        continues_fov = calc_continues_fov(
+            [fov_polygon_start_elevation, fov_polygon_end_elevation]
+        )
 
-        coverage_percent, intersection, leftover = calculate_intersection_raw(continues_fov, demand.polygon)
+        coverage_percent, intersection, leftover = calculate_intersection_raw(
+            continues_fov, demand.polygon
+        )
         if not intersection:
             continue
 
         related_centroids = get_intersectioncentroids(demand, intersection)
-        put_best_GSD_into_demand(demand, flight, [*point, flight.height_meters], related_centroids)
+        put_best_GSD_into_demand(
+            demand, flight, [*point, flight.height_meters], related_centroids
+        )
         put_LOS_into_demand(demand, [*point, flight.height_meters], related_centroids)
 
         current_access = {

@@ -62,7 +62,9 @@ def lat_lon_to_mm(latitude, longitude, origin_lat, origin_lon):
     lat_to_mm = (
         111000 * 1000
     )  # 1 degree of latitude is approximately 111 kilometers, converted to millimeters
-    lon_to_mm = 111000 * np.cos(np.radians(origin_lat)) * 1000  # Longitude conversion varies with latitude
+    lon_to_mm = (
+        111000 * np.cos(np.radians(origin_lat)) * 1000
+    )  # Longitude conversion varies with latitude
 
     # Calculate offsets from the origin
     lat_offset = (latitude - origin_lat) * lat_to_mm
@@ -82,7 +84,9 @@ def mm_to_lat_lon(lat_offset, lon_offset, origin_lat, origin_lon):
     """
     # Conversion factors
     mm_to_lat = 1 / (111000 * 1000)  # Inverse of latitude conversion factor
-    mm_to_lon = 1 / (111000 * np.cos(np.radians(origin_lat)) * 1000)  # Inverse of longitude conversion factor
+    mm_to_lon = 1 / (
+        111000 * np.cos(np.radians(origin_lat)) * 1000
+    )  # Inverse of longitude conversion factor
 
     # Calculate latitude and longitude from offsets and origin
     latitude = origin_lat + lat_offset * mm_to_lat

@@ -39,7 +39,9 @@ def interpolate_polyline(polyline, total_time, interval):
 
             # Update variables
             current_distance = (
-                0 if current_distance == interval_distance else current_distance - interval_distance
+                0
+                if current_distance == interval_distance
+                else current_distance - interval_distance
             )
 
         current_distance += segment_distance

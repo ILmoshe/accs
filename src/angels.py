@@ -53,7 +53,10 @@ def calculate_elevation_angle(observer: Point, target: Point) -> float:
     # Calculate horizontal distance using geodetic formula
     delta_lat = target_lat - observer_lat
     delta_lon = target_lon - observer_lon
-    a = sin(delta_lat / 2) ** 2 + cos(observer_lat) * cos(target_lat) * sin(delta_lon / 2) ** 2
+    a = (
+        sin(delta_lat / 2) ** 2
+        + cos(observer_lat) * cos(target_lat) * sin(delta_lon / 2) ** 2
+    )
     c = 2 * asin(sqrt(a))
     horizontal_distance = R * c
 

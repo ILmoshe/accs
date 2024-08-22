@@ -104,7 +104,9 @@ class Sensor(BaseModel):
     image_width_px: int
 
 
-def get_max_camera_capability(fov_polygon, focal_point: list[float, float, float]) -> float:
+def get_max_camera_capability(
+    fov_polygon, focal_point: list[float, float, float]
+) -> float:
     curr_distance_in_meters = -1
     for point in fov_polygon:
         flat_distance = distance.distance(focal_point[:2], point).meters
@@ -113,11 +115,17 @@ def get_max_camera_capability(fov_polygon, focal_point: list[float, float, float
     return curr_distance_in_meters
 
 
-def calculate_gsd_in_cm(sensor: Sensor, focal_point: Sequence[float], point_in_surface: Sequence[float]):
+def calculate_gsd_in_cm(
+    sensor: Sensor, focal_point: Sequence[float], point_in_surface: Sequence[float]
+):
     flat_distance = distance.distance(focal_point[:2], point_in_surface[:2]).meters
-    euclidian_distance = math.sqrt(flat_distance**2 + (focal_point[2] - point_in_surface[2]) ** 2)
+    euclidian_distance = math.sqrt(
+        flat_distance**2 + (focal_point[2] - point_in_surface[2]) ** 2
+    )
 
-    GSD = (euclidian_distance * sensor.width_mm) / (sensor.focal_length_mm * sensor.image_width_px)
+    GSD = (euclidian_distance * sensor.width_mm) / (
+        sensor.focal_length_mm * sensor.image_width_px
+    )
     return GSD * 100
 
 
@@ -153,15 +161,21 @@ class Flight(BaseModel):
     def add_relevant_fields(self) -> Self:
         # Norm fields
         self.camera_azimuth = self.camera_azimuth - (self.camera_azimuth * 2)
-        self.camera_elevation_start = self.camera_elevation_start - (self.camera_elevation_start * 2)
-        self.camera_elevation_end = self.camera_elevation_end - (self.camera_elevation_end * 2)
+        self.camera_elevation_start = self.camera_elevation_start - (
+            self.camera_elevation_start * 2
+        )
+        self.camera_elevation_end = self.camera_elevation_end - (
+            self.camera_elevation_end * 2
+        )
 
         focal_point = [*self.path[0], self.height_meters]
         fov_polygon = get_fov_polygon(
             self.sensor, [self.camera_azimuth, self.camera_elevation_start], focal_point
         )
         # self.gsd = calculate_gsd_in_cm(self.sensor, fov_polygon, focal_point)
-        self.camera_capability_meters = get_max_camera_capability(fov_polygon, focal_point)
+        self.camera_capability_meters = get_max_camera_capability(
+            fov_polygon, focal_point
+        )
         self.fov_polygon = fov_polygon
 
         return self
